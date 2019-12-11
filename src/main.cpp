@@ -1,10 +1,10 @@
-#include "Window.hpp"
+#include <OpenGLUtils/App.hpp>
 
+int main(int argc, char** argv)
+{
+    App app;
 
-int main(void) {
-    Window window(Window::Settings("CollageMaker2"));
-
-    window.loop();
+    app.loop();
 
     return 0;
 }
