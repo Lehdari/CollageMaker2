@@ -54,9 +54,17 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Render geometry
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderContext.texture1.bind(GL_TEXTURE0);
-    renderContext.texture2.bind(GL_TEXTURE1);
+    renderContext.imprintShader.use();
+    renderContext.readTexture->bind(GL_TEXTURE0);
+    renderContext.writeTexture->bindImage(0);
+    renderContext.imprintShader.dispatch(512, 512, 1);
+
+    renderContext.drawShader.use();
+    renderContext.writeTexture->bind(GL_TEXTURE0);
     renderContext.quad.render(renderContext.drawShader, renderContext.camera);
+
+    // swap texture read/write
+    std::swap(renderContext.readTexture, renderContext.writeTexture);
 }
 
 
@@ -76,11 +84,14 @@ int main(int argc, char** argv)
     // Quad
     renderContext.quad.loadFromVertexData(quadPositions, 4, nullptr, 0, quadIndices, 6);
 
-    // Draw Shader
+    // Shaders
     try {
         renderContext.drawShader.load(
             std::string(RES_DIR)+"shaders/VS_Quad.glsl",
             std::string(RES_DIR)+"shaders/FS_Quad.glsl");
+
+        renderContext.imprintShader.load(
+            std::string(RES_DIR)+"shaders/CS_Imprint.glsl", GL_COMPUTE_SHADER);
     }
     catch (char* e) {
         printf("%s\n", e);
@@ -89,18 +100,19 @@ int main(int argc, char** argv)
     renderContext.drawShader.use();
     renderContext.drawShader.addUniform("objectToWorld");
     renderContext.drawShader.addUniform("worldToClip");
-    renderContext.drawShader.addUniform("tex1");
-    renderContext.drawShader.setUniform("tex1", 1);
-    renderContext.drawShader.addUniform("tex2");
-    renderContext.drawShader.setUniform("tex2", 0);
+    renderContext.drawShader.addUniform("tex");
+    renderContext.drawShader.setUniform("tex", 0);
+
+    renderContext.imprintShader.addUniform("tex");
+    renderContext.imprintShader.setUniform("tex", 0);
 
     // Camera
     gut::Camera::Settings cameraSettings;
     cameraSettings.aspectRatio = (float)appSettings.window.width/(float)appSettings.window.height;
 
     // Textures
-    renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/voronoise.png");
-    renderContext.texture2.loadFromFile(std::string(RES_DIR)+"textures/splatter.png");
+    renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/voronoise.png", GL_RGBA32F);
+    renderContext.texture2.loadFromFile(std::string(RES_DIR)+"textures/binarynoise.png", GL_RGBA32F);
 
     app.loop();
 

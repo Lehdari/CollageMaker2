@@ -20,12 +20,20 @@
 
 struct RenderContext {
     gut::Mesh       quad;
-    gut::Shader     drawShader;
+    gut::Shader     drawShader; // shader for drawing the quad
+    gut::Shader     imprintShader; // compute shader for the imprinting
     gut::Camera     camera;
+
+    // 2 textures for alterating between read and write
     gut::Texture    texture1;
     gut::Texture    texture2;
+    gut::Texture*   readTexture;
+    gut::Texture*   writeTexture;
 
-    RenderContext() = default;
+    RenderContext() :
+        readTexture     (&texture1),
+        writeTexture    (&texture2)
+    {}
 };
 
 
