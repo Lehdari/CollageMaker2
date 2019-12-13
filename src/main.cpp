@@ -54,6 +54,8 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Render geometry
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    renderContext.texture1.bind(GL_TEXTURE0);
+    renderContext.texture2.bind(GL_TEXTURE1);
     renderContext.quad.render(renderContext.drawShader, renderContext.camera);
 }
 
@@ -84,12 +86,21 @@ int main(int argc, char** argv)
         printf("%s\n", e);
         return 0;
     }
+    renderContext.drawShader.use();
     renderContext.drawShader.addUniform("objectToWorld");
     renderContext.drawShader.addUniform("worldToClip");
+    renderContext.drawShader.addUniform("tex1");
+    renderContext.drawShader.setUniform("tex1", 1);
+    renderContext.drawShader.addUniform("tex2");
+    renderContext.drawShader.setUniform("tex2", 0);
 
     // Camera
     gut::Camera::Settings cameraSettings;
     cameraSettings.aspectRatio = (float)appSettings.window.width/(float)appSettings.window.height;
+
+    // Textures
+    renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/voronoise.png");
+    renderContext.texture2.loadFromFile(std::string(RES_DIR)+"textures/splatter.png");
 
     app.loop();
 

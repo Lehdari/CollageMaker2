@@ -15,12 +15,15 @@
 #include <OpenGLUtils/Mesh.hpp>
 #include <OpenGLUtils/Shader.hpp>
 #include <OpenGLUtils/Camera.hpp>
+#include <OpenGLUtils/Texture.hpp>
 
 
 struct RenderContext {
-    gut::Mesh   quad;
-    gut::Shader drawShader;
-    gut::Camera camera;
+    gut::Mesh       quad;
+    gut::Shader     drawShader;
+    gut::Camera     camera;
+    gut::Texture    texture1;
+    gut::Texture    texture2;
 
     RenderContext() = default;
 };
