@@ -24,6 +24,7 @@ uniform float imprintX;
 uniform float imprintY;
 uniform float imprintScale;
 uniform float imprintAngle;
+uniform vec4  imprintColor;
 
 // Textures
 uniform sampler2D texCurrent;
@@ -56,7 +57,7 @@ void main() {
     it[2][1] = imprintY/imprintHeight;
 
     vec3 iuv = vec3(cp.xy/vec2(imprintWidth, imprintHeight), 1.0);
-    vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy);
+    vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)*imprintColor;
 
     vec4 pixel = vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 

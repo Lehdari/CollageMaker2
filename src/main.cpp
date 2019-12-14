@@ -51,16 +51,21 @@ void handleEvents(SDL_Event& event, A_App::Context& appContext)
 // Pipeline function for rendering
 void render(RenderContext& renderContext, A_App::Context& appContext)
 {
+    bool swap = false;
+
     // Render geometry
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Imgui
     {
         ImGui::Begin("Imprint");
-        ImGui::SliderFloat("Scale", &renderContext.imprintScale, 0.0f, 8.0f, "%.3f");
-        ImGui::SliderFloat("Angle", &renderContext.imprintAngle, 0.0f, 6.2831f, "%.3f");
+        ImGui::ColorEdit4("Color", renderContext.imprintColor.data());
         ImGui::SliderFloat("X", &renderContext.imprintX, 0.0f, 4096.0f, "%.3f");
         ImGui::SliderFloat("Y", &renderContext.imprintY, 0.0f, 4096.0f, "%.3f");
+        ImGui::SliderFloat("Scale", &renderContext.imprintScale, 0.0f, 8.0f, "%.3f");
+        ImGui::SliderFloat("Angle", &renderContext.imprintAngle, 0.0f, 6.2831f, "%.3f");
+        if (ImGui::Button("Imprint"))
+            swap = true;
         ImGui::End();
     }
 
@@ -74,6 +79,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     renderContext.imprintShader.setUniform("imprintY", renderContext.imprintY);
     renderContext.imprintShader.setUniform("imprintScale", renderContext.imprintScale);
     renderContext.imprintShader.setUniform("imprintAngle", renderContext.imprintAngle);
+    renderContext.imprintShader.setUniform("imprintColor", renderContext.imprintColor);
 
     renderContext.readTexture->bind(GL_TEXTURE0);
     renderContext.imprintTexture.bind(GL_TEXTURE1);
@@ -85,9 +91,10 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     renderContext.drawShader.use();
     renderContext.writeTexture->bind(GL_TEXTURE0);
     renderContext.quad.render(renderContext.drawShader, renderContext.camera);
-    
+
     // swap texture read/write
-    //std::swap(renderContext.readTexture, renderContext.writeTexture);
+    if (swap)
+        std::swap(renderContext.readTexture, renderContext.writeTexture);
 }
 
 
@@ -132,11 +139,12 @@ int main(int argc, char** argv)
     renderContext.imprintShader.addUniform("height");
     renderContext.imprintShader.addUniform("imprintWidth");
     renderContext.imprintShader.addUniform("imprintHeight");
-
     renderContext.imprintShader.addUniform("imprintX");
     renderContext.imprintShader.addUniform("imprintY");
     renderContext.imprintShader.addUniform("imprintScale");
     renderContext.imprintShader.addUniform("imprintAngle");
+    renderContext.imprintShader.addUniform("imprintColor");
+
     renderContext.imprintShader.addUniform("texCurrent");
     renderContext.imprintShader.setUniform("texCurrent", 0);
     renderContext.imprintShader.addUniform("texImprint");
@@ -167,6 +175,7 @@ int main(int argc, char** argv)
     renderContext.imprintY = 2048.0f;
     renderContext.imprintScale = 4.0f;
     renderContext.imprintAngle = 0.0f;
+    renderContext.imprintColor << 1.0f, 1.0f, 1.0f, 1.0f;
 
     // Enter application loop
     app.loop();

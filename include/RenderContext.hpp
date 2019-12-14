@@ -35,6 +35,7 @@ struct RenderContext {
     float           imprintY;
     float           imprintScale;
     float           imprintAngle;
+    Vec4f           imprintColor;
 
     // Textures for the imprint process
     gut::Texture    targetTexture;
