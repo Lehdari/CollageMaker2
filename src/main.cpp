@@ -54,17 +54,40 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Render geometry
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderContext.imprintShader.use();
-    renderContext.readTexture->bind(GL_TEXTURE0);
-    renderContext.writeTexture->bindImage(0);
-    renderContext.imprintShader.dispatch(512, 512, 1);
+    // Imgui
+    {
+        ImGui::Begin("Imprint");
+        ImGui::SliderFloat("Scale", &renderContext.imprintScale, 0.0f, 8.0f, "%.3f");
+        ImGui::SliderFloat("Angle", &renderContext.imprintAngle, 0.0f, 6.2831f, "%.3f");
+        ImGui::SliderFloat("X", &renderContext.imprintX, 0.0f, 4096.0f, "%.3f");
+        ImGui::SliderFloat("Y", &renderContext.imprintY, 0.0f, 4096.0f, "%.3f");
+        ImGui::End();
+    }
 
+    // Imprint
+    renderContext.imprintShader.use();
+    renderContext.imprintShader.setUniform("width", renderContext.width);
+    renderContext.imprintShader.setUniform("height", renderContext.height);
+    renderContext.imprintShader.setUniform("imprintWidth", renderContext.imprintWidth);
+    renderContext.imprintShader.setUniform("imprintHeight", renderContext.imprintHeight);
+    renderContext.imprintShader.setUniform("imprintX", renderContext.imprintX);
+    renderContext.imprintShader.setUniform("imprintY", renderContext.imprintY);
+    renderContext.imprintShader.setUniform("imprintScale", renderContext.imprintScale);
+    renderContext.imprintShader.setUniform("imprintAngle", renderContext.imprintAngle);
+
+    renderContext.readTexture->bind(GL_TEXTURE0);
+    renderContext.imprintTexture.bind(GL_TEXTURE1);
+
+    renderContext.writeTexture->bindImage(0);
+    renderContext.imprintShader.dispatch(renderContext.width, renderContext.height, 1);
+
+    // Draw
     renderContext.drawShader.use();
     renderContext.writeTexture->bind(GL_TEXTURE0);
     renderContext.quad.render(renderContext.drawShader, renderContext.camera);
-
+    
     // swap texture read/write
-    std::swap(renderContext.readTexture, renderContext.writeTexture);
+    //std::swap(renderContext.readTexture, renderContext.writeTexture);
 }
 
 
@@ -97,23 +120,55 @@ int main(int argc, char** argv)
         printf("%s\n", e);
         return 0;
     }
+
     renderContext.drawShader.use();
     renderContext.drawShader.addUniform("objectToWorld");
     renderContext.drawShader.addUniform("worldToClip");
     renderContext.drawShader.addUniform("tex");
     renderContext.drawShader.setUniform("tex", 0);
 
-    renderContext.imprintShader.addUniform("tex");
-    renderContext.imprintShader.setUniform("tex", 0);
+    renderContext.imprintShader.use();
+    renderContext.imprintShader.addUniform("width");
+    renderContext.imprintShader.addUniform("height");
+    renderContext.imprintShader.addUniform("imprintWidth");
+    renderContext.imprintShader.addUniform("imprintHeight");
+
+    renderContext.imprintShader.addUniform("imprintX");
+    renderContext.imprintShader.addUniform("imprintY");
+    renderContext.imprintShader.addUniform("imprintScale");
+    renderContext.imprintShader.addUniform("imprintAngle");
+    renderContext.imprintShader.addUniform("texCurrent");
+    renderContext.imprintShader.setUniform("texCurrent", 0);
+    renderContext.imprintShader.addUniform("texImprint");
+    renderContext.imprintShader.setUniform("texImprint", 1);
 
     // Camera
     gut::Camera::Settings cameraSettings;
     cameraSettings.aspectRatio = (float)appSettings.window.width/(float)appSettings.window.height;
 
     // Textures
-    renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/voronoise.png", GL_RGBA32F);
-    renderContext.texture2.loadFromFile(std::string(RES_DIR)+"textures/binarynoise.png", GL_RGBA32F);
+    renderContext.targetTexture.loadFromFile(std::string(RES_DIR)+"textures/kekkonen.jpg", GL_RGBA32F);
+    renderContext.targetTexture.setFiltering(GL_NEAREST, GL_NEAREST);
+    renderContext.width = renderContext.targetTexture.width();
+    renderContext.height = renderContext.targetTexture.height();
 
+    renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/kekkonen.jpg", GL_RGBA32F);
+    //renderContext.texture1.create(renderContext.width, renderContext.height, GL_RGBA32F);
+    renderContext.texture1.setFiltering(GL_NEAREST, GL_NEAREST);
+    renderContext.texture2.create(renderContext.width, renderContext.height, GL_RGBA32F);
+    renderContext.texture2.setFiltering(GL_NEAREST, GL_NEAREST);
+
+    renderContext.imprintTexture.loadFromFile(std::string(RES_DIR)+"textures/brush1.png", GL_RGBA32F);
+    renderContext.imprintTexture.setFiltering(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+    renderContext.imprintTexture.setWrapping(GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER);
+    renderContext.imprintWidth = renderContext.imprintTexture.width();
+    renderContext.imprintHeight = renderContext.imprintTexture.height();
+    renderContext.imprintX = 2048.0f;
+    renderContext.imprintY = 2048.0f;
+    renderContext.imprintScale = 4.0f;
+    renderContext.imprintAngle = 0.0f;
+
+    // Enter application loop
     app.loop();
 
     return 0;

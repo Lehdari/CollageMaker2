@@ -24,6 +24,23 @@ struct RenderContext {
     gut::Shader     imprintShader; // compute shader for the imprinting
     gut::Camera     camera;
 
+    // Main texture dimensions
+    int             width;
+    int             height;
+
+    // Imprint parameters
+    int             imprintWidth;
+    int             imprintHeight;
+    float           imprintX;
+    float           imprintY;
+    float           imprintScale;
+    float           imprintAngle;
+
+    // Textures for the imprint process
+    gut::Texture    targetTexture;
+    gut::Texture    imprintTexture; // Texture to be imprinted (brush)
+    gut::Texture    errorTexture;
+
     // 2 textures for alterating between read and write
     gut::Texture    texture1;
     gut::Texture    texture2;
