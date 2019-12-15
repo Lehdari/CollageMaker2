@@ -22,6 +22,7 @@ struct RenderContext {
     gut::Mesh       quad;
     gut::Shader     drawShader; // shader for drawing the quad
     gut::Shader     imprintShader; // compute shader for the imprinting
+    gut::Shader     errorShader; // compute shader for determining the error
     gut::Camera     camera;
 
     // Main texture dimensions

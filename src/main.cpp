@@ -87,9 +87,16 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     renderContext.writeTexture->bindImage(0);
     renderContext.imprintShader.dispatch(renderContext.width, renderContext.height, 1);
 
+    // Error
+    renderContext.errorShader.use();
+    renderContext.writeTexture->bind(GL_TEXTURE0);
+    renderContext.targetTexture.bind(GL_TEXTURE1);
+    renderContext.errorTexture.bindImage(0);
+    renderContext.errorShader.dispatch(renderContext.width, renderContext.height, 1);
+
     // Draw
     renderContext.drawShader.use();
-    renderContext.writeTexture->bind(GL_TEXTURE0);
+    renderContext.errorTexture.bind(GL_TEXTURE0);
     renderContext.quad.render(renderContext.drawShader, renderContext.camera);
 
     // swap texture read/write
@@ -122,6 +129,9 @@ int main(int argc, char** argv)
 
         renderContext.imprintShader.load(
             std::string(RES_DIR)+"shaders/CS_Imprint.glsl", GL_COMPUTE_SHADER);
+
+        renderContext.errorShader.load(
+            std::string(RES_DIR)+"shaders/CS_Error.glsl", GL_COMPUTE_SHADER);
     }
     catch (char* e) {
         printf("%s\n", e);
@@ -144,38 +154,46 @@ int main(int argc, char** argv)
     renderContext.imprintShader.addUniform("imprintScale");
     renderContext.imprintShader.addUniform("imprintAngle");
     renderContext.imprintShader.addUniform("imprintColor");
-
     renderContext.imprintShader.addUniform("texCurrent");
     renderContext.imprintShader.setUniform("texCurrent", 0);
     renderContext.imprintShader.addUniform("texImprint");
     renderContext.imprintShader.setUniform("texImprint", 1);
+
+    renderContext.errorShader.use();
+    renderContext.errorShader.addUniform("texCurrent");
+    renderContext.errorShader.setUniform("texCurrent", 0);
+    renderContext.errorShader.addUniform("texTarget");
+    renderContext.errorShader.setUniform("texTarget", 1);
 
     // Camera
     gut::Camera::Settings cameraSettings;
     cameraSettings.aspectRatio = (float)appSettings.window.width/(float)appSettings.window.height;
 
     // Textures
-    renderContext.targetTexture.loadFromFile(std::string(RES_DIR)+"textures/kekkonen.jpg", GL_RGBA32F);
+    renderContext.targetTexture.loadFromFile(std::string(RES_DIR)+"textures/kekkonen1024.jpg", GL_RGBA32F);
     renderContext.targetTexture.setFiltering(GL_NEAREST, GL_NEAREST);
     renderContext.width = renderContext.targetTexture.width();
     renderContext.height = renderContext.targetTexture.height();
-
-    renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/kekkonen.jpg", GL_RGBA32F);
-    //renderContext.texture1.create(renderContext.width, renderContext.height, GL_RGBA32F);
-    renderContext.texture1.setFiltering(GL_NEAREST, GL_NEAREST);
-    renderContext.texture2.create(renderContext.width, renderContext.height, GL_RGBA32F);
-    renderContext.texture2.setFiltering(GL_NEAREST, GL_NEAREST);
 
     renderContext.imprintTexture.loadFromFile(std::string(RES_DIR)+"textures/brush1.png", GL_RGBA32F);
     renderContext.imprintTexture.setFiltering(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
     renderContext.imprintTexture.setWrapping(GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER);
     renderContext.imprintWidth = renderContext.imprintTexture.width();
     renderContext.imprintHeight = renderContext.imprintTexture.height();
-    renderContext.imprintX = 2048.0f;
-    renderContext.imprintY = 2048.0f;
-    renderContext.imprintScale = 4.0f;
+    renderContext.imprintX = 512.0f;
+    renderContext.imprintY = 512.0f;
+    renderContext.imprintScale = 1.0f;
     renderContext.imprintAngle = 0.0f;
     renderContext.imprintColor << 1.0f, 1.0f, 1.0f, 1.0f;
+
+    renderContext.errorTexture.create(renderContext.width, renderContext.height, GL_RGBA32F);
+    renderContext.errorTexture.setFiltering(GL_NEAREST, GL_NEAREST);
+
+    //renderContext.texture1.loadFromFile(std::string(RES_DIR)+"textures/kekkonen1024.jpg", GL_RGBA32F);
+    renderContext.texture1.create(renderContext.width, renderContext.height, GL_RGBA32F);
+    renderContext.texture1.setFiltering(GL_NEAREST, GL_NEAREST);
+    renderContext.texture2.create(renderContext.width, renderContext.height, GL_RGBA32F);
+    renderContext.texture2.setFiltering(GL_NEAREST, GL_NEAREST);
 
     // Enter application loop
     app.loop();
