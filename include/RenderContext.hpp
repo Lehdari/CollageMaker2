@@ -23,11 +23,15 @@ struct RenderContext {
     gut::Shader     drawShader; // shader for drawing the quad
     gut::Shader     imprintShader; // compute shader for the imprinting
     gut::Shader     errorShader; // compute shader for determining the error
+    gut::Shader     reductionShader; // compute shader for doing error reduction
     gut::Camera     camera;
 
     // Main texture dimensions
     int             width;
     int             height;
+
+    int             nLevels;
+    float           error;
 
     // Imprint parameters
     int             imprintWidth;

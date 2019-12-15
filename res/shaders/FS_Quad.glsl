@@ -19,5 +19,6 @@ uniform sampler2D tex;
 
 void main() {
     vec2 ppos = vec2(pos.x, 1.0-pos.y);
-    color = vec4(texture(tex, ppos).rgb, 1.0);
+    //color = vec4(texture(tex, ppos).rgb, 1.0);
+    color = vec4(texelFetch(tex, ivec2(ppos*1024), 0).rgb, 1.0);
 }
