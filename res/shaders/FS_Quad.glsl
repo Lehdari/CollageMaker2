@@ -16,9 +16,10 @@ in vec3 col;
 out vec4 color;
 
 uniform sampler2D tex;
+//uniform sampler2DArray tex;
 
 void main() {
     vec2 ppos = vec2(pos.x, 1.0-pos.y);
-    //color = vec4(texture(tex, ppos).rgb, 1.0);
-    color = vec4(texelFetch(tex, ivec2(ppos*1024), 0).rgb, 1.0);
+    color = vec4(texture(tex, ppos).rgb, 1.0);
+    //color = vec4(texelFetch(tex, ivec3(ppos*256, 3), 2).rrr+vec3(0.5, 0.5, 0.5), 1.0);
 }
