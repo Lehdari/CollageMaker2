@@ -34,7 +34,8 @@ struct RenderContext {
     int                     nLevels;
     std::array<float, 8>    error; // error(ch.0) and gradient(ch.1-7)
     float                   pError; // previous error
-    float                   firstDiff;
+    int                     nIters;
+    double                  imprintRatio; // imprint brush area / canvas area
 
     // Imprint parameters
     int                     imprintWidth;

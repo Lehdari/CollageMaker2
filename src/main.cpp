@@ -84,26 +84,19 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
             renderContext.width/(2 << level), renderContext.height/(2 << level), 1);
     }
 
-    // Check whether the firstDiff is to be stored
-    bool storeFirstDiff = false;
-    if (renderContext.pError < 0.0 && renderContext.error[0] > 0.0)
-        storeFirstDiff = true;
-
     // Fetch error and gradient
     renderContext.pError = renderContext.error[0];
     glGetTexImage(GL_TEXTURE_2D_ARRAY, renderContext.nLevels-1, GL_RED, GL_FLOAT, renderContext.error.data());
+    double gScale = renderContext.imprintScale*renderContext.imprintScale*renderContext.imprintRatio;
     float diff = renderContext.pError - renderContext.error[0];
 
-    // Store first diff
-    if (storeFirstDiff)
-        renderContext.firstDiff = diff;
-
     // Detect if error difference is small enough
-    if (renderContext.firstDiff > 0.0 && diff < renderContext.firstDiff*0.01) {
+    double diffLimit = 0.0001*gScale;
+    if (diff > -1.0e-8 && diff < diffLimit) {
         swap = true;
     } else {
         // Gradient descent
-        const float gdRate = 1.0;
+        float gdRate = std::clamp(0.75+0.1/gScale, 0.0, 8.0);
         renderContext.imprintX -= gdRate*1000.0*renderContext.error[1];
         renderContext.imprintY -= gdRate*1000.0*renderContext.error[2];
         renderContext.imprintScale -= gdRate*renderContext.error[3];
@@ -112,7 +105,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintColor[1] -= gdRate*renderContext.error[6];
         renderContext.imprintColor[2] -= gdRate*renderContext.error[7];
 
-        renderContext.imprintScale = std::clamp(renderContext.imprintScale, 0.1f, 4.0f);
+        renderContext.imprintScale = std::clamp(renderContext.imprintScale, 0.1f, 1.0f);
         renderContext.imprintColor = renderContext.imprintColor.cwiseMax(0.0).cwiseMin(1.0);
     }
 
@@ -144,9 +137,8 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Imgui
     {
         ImGui::Begin("Imprint");
-        ImGui::Text("error: %0.5f %0.10f %0.10f %0.3f",
-            renderContext.error[0], diff, renderContext.firstDiff,
-            (diff/(renderContext.firstDiff*0.01)));
+        ImGui::Text("error: %0.10f %0.10f %0.10f %0.10f", renderContext.error[0], diff,
+            diffLimit, diff/diffLimit);
         ImGui::ColorEdit4("Color", renderContext.imprintColor.data());
         ImGui::SliderFloat("X", &renderContext.imprintX, 0.0f, 1024.0f, "%.3f");
         ImGui::SliderFloat("Y", &renderContext.imprintY, 0.0f, 1024.0f, "%.3f");
@@ -164,12 +156,13 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintX = RND*renderContext.width;
         renderContext.imprintY = RND*renderContext.height;
         renderContext.imprintScale = 0.1 + RND*0.4;
-        renderContext.imprintAngle = PI*2.0*RND;
+        //renderContext.imprintAngle = PI*2.0*RND;
+        renderContext.imprintAngle = atan2(512.0-renderContext.imprintY, renderContext.imprintX-512.0)+0.5*PI;
         renderContext.imprintColor << RND, RND, RND, 1.0;
 
         renderContext.error[0] = -1.0;
         renderContext.pError = -1.0;
-        renderContext.firstDiff = -1.0;
+        renderContext.nIters = 0;
     }
 }
 
@@ -182,6 +175,7 @@ int main(int argc, char** argv)
     appSettings.window.height = 1024;
     appSettings.handleEvents = &handleEvents;
     appSettings.render = &render;
+    appSettings.window.framerateLimit = 1000;
 
     RenderContext renderContext;
     // Create app (required here because it calls gl3wInit)
@@ -265,13 +259,17 @@ int main(int argc, char** argv)
     renderContext.error.fill(0.0f);
     renderContext.error[0] = -1.0f;
     renderContext.pError = -1.0f;
-    renderContext.firstDiff = -1.0f;
+    renderContext.nIters = 0;
 
     renderContext.imprintTexture.loadFromFile(std::string(RES_DIR)+"textures/brush1.png");
     renderContext.imprintTexture.setFiltering(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
     renderContext.imprintTexture.setWrapping(GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER);
     renderContext.imprintWidth = renderContext.imprintTexture.width();
     renderContext.imprintHeight = renderContext.imprintTexture.height();
+
+    renderContext.imprintRatio =
+        (double)(renderContext.imprintWidth*renderContext.imprintHeight)/
+        (double)(renderContext.width*renderContext.height);
 
     renderContext.imprintX = RND*renderContext.width;
     renderContext.imprintY = RND*renderContext.height;
