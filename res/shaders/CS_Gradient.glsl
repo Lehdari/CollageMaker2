@@ -1,6 +1,6 @@
 //
 // Project: CollageMaker2
-// File: CS_Error.glsl
+// File: CS_Gradient.glsl
 //
 // Copyright (c) 2019 Miika 'Lehdari' Lehtimäki
 // You may use, distribute and modify this code under the terms
@@ -11,7 +11,7 @@
 #version 430
 
 layout(local_size_x = 1, local_size_y = 1) in;
-layout(r32f, binding = 0) uniform image2D img_output;
+layout(r32f, binding = 0) uniform image2DArray img_output;
 
 // Imprint parameters
 uniform int   imprintWidth;
@@ -65,12 +65,21 @@ void main() {
     vec4 cPixel = texelFetch(texCurrent, p, 0); // current pixel
     vec4 tPixel = texelFetch(texTarget, p, 0); // target pixel
 
+    // gradient
     float iParams[7] = { imprintX, imprintY, imprintScale, imprintAngle,
-        imprintColor[0], imprintColor[1], imprintColor[2] };
-    vec4 nPixel = imprint(cp, cPixel, iParams); // imprinted pixel
+    imprintColor[0], imprintColor[1], imprintColor[2] };
+    float gParams[7] = iParams;
+    for (int i=0; i<7; ++i) {
+        // evaluate gradient by using trapezoid rule
+        gParams[i] = iParams[i]-gEps[i];
+        vec4 gDiff1 = imprint(cp, cPixel, gParams) - tPixel;
+        float ge1 = dot(gDiff1, gDiff1);
 
-    // error
-    vec4 diff = nPixel - tPixel;
-    float e = dot(diff, diff);
-    imageStore(img_output, ivec2(gl_GlobalInvocationID.xy), vec4(e, 0.0, 0.0, 0.0));
+        gParams[i] = iParams[i]+gEps[i];
+        vec4 gDiff2 = imprint(cp, cPixel, gParams) - tPixel;
+        float ge2 = dot(gDiff2, gDiff2);
+
+        float g = (ge2-ge1)/(2.0*gEps[i]);
+        imageStore(img_output, ivec3(gl_GlobalInvocationID.xy, i), vec4(g, 0.0, 0.0, 0.0));
+    }
 }

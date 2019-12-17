@@ -11,6 +11,7 @@
 #include <OpenGLUtils/App.hpp>
 #include "RenderContext.hpp"
 #include "Quad.hpp"
+#include "RenderUtils.hpp"
 
 #include <random>
 
@@ -59,36 +60,9 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Render geometry
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Error
-    renderContext.errorShader.use();
-    renderContext.errorShader.setUniform("imprintWidth", renderContext.imprintWidth);
-    renderContext.errorShader.setUniform("imprintHeight", renderContext.imprintHeight);
-    renderContext.errorShader.setUniform("imprintX", renderContext.imprintX);
-    renderContext.errorShader.setUniform("imprintY", renderContext.imprintY);
-    renderContext.errorShader.setUniform("imprintScale", renderContext.imprintScale);
-    renderContext.errorShader.setUniform("imprintAngle", renderContext.imprintAngle);
-    renderContext.errorShader.setUniform("imprintColor", renderContext.imprintColor);
-    renderContext.readTexture->bind(GL_TEXTURE0);
-    renderContext.targetTexture.bind(GL_TEXTURE1);
-    renderContext.imprintTexture.bind(GL_TEXTURE2);
-    renderContext.errorTexture.bindImage(0);
-    renderContext.errorShader.dispatch(renderContext.width, renderContext.height, 1);
-
-    // Reduction
-    renderContext.reductionShader.use();
-    renderContext.errorTexture.bind(GL_TEXTURE0);
-    for (int level=0; level<renderContext.nLevels; ++level) {
-        renderContext.errorTexture.bindImage(0, level+1);
-        renderContext.reductionShader.setUniform("level", level);
-        renderContext.reductionShader.dispatch(
-            renderContext.width/(2 << level), renderContext.height/(2 << level), 1);
-    }
-
-    // Fetch error and gradient
-    renderContext.pError = renderContext.error[0];
-    glGetTexImage(GL_TEXTURE_2D_ARRAY, renderContext.nLevels-1, GL_RED, GL_FLOAT, renderContext.error.data());
+    renderError(renderContext);
     double gScale = renderContext.imprintScale*renderContext.imprintScale*renderContext.imprintRatio;
-    float diff = renderContext.pError - renderContext.error[0];
+    float diff = renderContext.pError - renderContext.error;
 
     // Detect if error difference is small enough
     double diffLimit = 0.0001*gScale;
@@ -96,14 +70,16 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         swap = true;
     } else {
         // Gradient descent
+        renderGradient(renderContext);
+
         float gdRate = std::clamp(0.75+0.1/gScale, 0.0, 8.0);
-        renderContext.imprintX -= gdRate*1000.0*renderContext.error[1];
-        renderContext.imprintY -= gdRate*1000.0*renderContext.error[2];
-        renderContext.imprintScale -= gdRate*renderContext.error[3];
-        renderContext.imprintAngle -= gdRate*renderContext.error[4];
-        renderContext.imprintColor[0] -= gdRate*renderContext.error[5];
-        renderContext.imprintColor[1] -= gdRate*renderContext.error[6];
-        renderContext.imprintColor[2] -= gdRate*renderContext.error[7];
+        renderContext.imprintX -= gdRate*1000.0*renderContext.gradient[0];
+        renderContext.imprintY -= gdRate*1000.0*renderContext.gradient[1];
+        renderContext.imprintScale -= gdRate*renderContext.gradient[2];
+        renderContext.imprintAngle -= gdRate*renderContext.gradient[3];
+        renderContext.imprintColor[0] -= gdRate*renderContext.gradient[4];
+        renderContext.imprintColor[1] -= gdRate*renderContext.gradient[5];
+        renderContext.imprintColor[2] -= gdRate*renderContext.gradient[6];
 
         renderContext.imprintScale = std::clamp(renderContext.imprintScale, 0.1f, 1.0f);
         renderContext.imprintColor = renderContext.imprintColor.cwiseMax(0.0).cwiseMin(1.0);
@@ -137,7 +113,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Imgui
     {
         ImGui::Begin("Imprint");
-        ImGui::Text("error: %0.10f %0.10f %0.10f %0.10f", renderContext.error[0], diff,
+        ImGui::Text("error: %0.10f %0.10f %0.10f %0.10f", renderContext.error, diff,
             diffLimit, diff/diffLimit);
         ImGui::ColorEdit4("Color", renderContext.imprintColor.data());
         ImGui::SliderFloat("X", &renderContext.imprintX, 0.0f, 1024.0f, "%.3f");
@@ -160,7 +136,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintAngle = atan2(512.0-renderContext.imprintY, renderContext.imprintX-512.0)+0.5*PI;
         renderContext.imprintColor << RND, RND, RND, 1.0;
 
-        renderContext.error[0] = -1.0;
+        renderContext.error = -1.0;
         renderContext.pError = -1.0;
         renderContext.nIters = 0;
     }
@@ -196,8 +172,14 @@ int main(int argc, char** argv)
         renderContext.errorShader.load(
             std::string(RES_DIR)+"shaders/CS_Error.glsl", GL_COMPUTE_SHADER);
 
-        renderContext.reductionShader.load(
-            std::string(RES_DIR)+"shaders/CS_Reduce.glsl", GL_COMPUTE_SHADER);
+        renderContext.gradientShader.load(
+            std::string(RES_DIR)+"shaders/CS_Gradient.glsl", GL_COMPUTE_SHADER);
+
+        renderContext.errorReductionShader.load(
+            std::string(RES_DIR)+"shaders/CS_ReduceError.glsl", GL_COMPUTE_SHADER);
+
+        renderContext.gradientReductionShader.load(
+            std::string(RES_DIR)+"shaders/CS_ReduceGradient.glsl", GL_COMPUTE_SHADER);
     }
     catch (char* e) {
         printf("%s\n", e);
@@ -240,10 +222,30 @@ int main(int argc, char** argv)
     renderContext.errorShader.addUniform("texImprint");
     renderContext.errorShader.setUniform("texImprint", 2);
 
-    renderContext.reductionShader.use();
-    renderContext.reductionShader.addUniform("level");
-    renderContext.reductionShader.addUniform("texError");
-    renderContext.reductionShader.setUniform("texError", 0);
+    renderContext.gradientShader.use();
+    renderContext.gradientShader.addUniform("imprintWidth");
+    renderContext.gradientShader.addUniform("imprintHeight");
+    renderContext.gradientShader.addUniform("imprintX");
+    renderContext.gradientShader.addUniform("imprintY");
+    renderContext.gradientShader.addUniform("imprintScale");
+    renderContext.gradientShader.addUniform("imprintAngle");
+    renderContext.gradientShader.addUniform("imprintColor");
+    renderContext.gradientShader.addUniform("texCurrent");
+    renderContext.gradientShader.setUniform("texCurrent", 0);
+    renderContext.gradientShader.addUniform("texTarget");
+    renderContext.gradientShader.setUniform("texTarget", 1);
+    renderContext.gradientShader.addUniform("texImprint");
+    renderContext.gradientShader.setUniform("texImprint", 2);
+
+    renderContext.errorReductionShader.use();
+    renderContext.errorReductionShader.addUniform("level");
+    renderContext.errorReductionShader.addUniform("texError");
+    renderContext.errorReductionShader.setUniform("texError", 0);
+
+    renderContext.gradientReductionShader.use();
+    renderContext.gradientReductionShader.addUniform("level");
+    renderContext.gradientReductionShader.addUniform("texGradient");
+    renderContext.gradientReductionShader.setUniform("texGradient", 0);
 
     // Camera
     gut::Camera::Settings cameraSettings;
@@ -256,8 +258,8 @@ int main(int argc, char** argv)
     renderContext.height = renderContext.targetTexture.height();
     renderContext.nLevels = 0;
     for (int i=renderContext.width; i>0; i = i >> 1, ++renderContext.nLevels);
-    renderContext.error.fill(0.0f);
-    renderContext.error[0] = -1.0f;
+    renderContext.error = -1.0f;
+    renderContext.gradient.fill(0.0f);
     renderContext.pError = -1.0f;
     renderContext.nIters = 0;
 
@@ -277,8 +279,10 @@ int main(int argc, char** argv)
     renderContext.imprintAngle = PI*2.0*RND;
     renderContext.imprintColor << RND, RND, RND, 1.0;
 
-    renderContext.errorTexture.create(renderContext.width, renderContext.height, 8);
+    renderContext.errorTexture.create(renderContext.width, renderContext.height);
     renderContext.errorTexture.setFiltering(GL_NEAREST, GL_NEAREST);
+    renderContext.gradientTexture.create(renderContext.width, renderContext.height, 7);
+    renderContext.gradientTexture.setFiltering(GL_NEAREST, GL_NEAREST);
 
     renderContext.texture1.create(renderContext.width, renderContext.height);
     renderContext.texture1.setFiltering(GL_NEAREST, GL_NEAREST);

@@ -24,7 +24,9 @@ struct RenderContext {
     gut::Shader             drawShader; // shader for drawing the quad
     gut::Shader             imprintShader; // compute shader for the imprinting
     gut::Shader             errorShader; // compute shader for determining the error
-    gut::Shader             reductionShader; // compute shader for doing error reduction
+    gut::Shader             gradientShader; // compute shader for determining the gradient
+    gut::Shader             errorReductionShader; // compute shader for doing error reduction
+    gut::Shader             gradientReductionShader; // compute shader for doing gradient reduction
     gut::Camera             camera;
 
     // Main texture dimensions
@@ -32,7 +34,8 @@ struct RenderContext {
     int                     height;
 
     int                     nLevels;
-    std::array<float, 8>    error; // error(ch.0) and gradient(ch.1-7)
+    float                   error; // error from parallel reduction
+    std::array<float, 7>    gradient; // gradient from parallel reduction
     float                   pError; // previous error
     int                     nIters;
     double                  imprintRatio; // imprint brush area / canvas area
@@ -50,6 +53,7 @@ struct RenderContext {
     gut::Texture            targetTexture;
     gut::Texture            imprintTexture; // Texture to be imprinted (brush)
     gut::Texture            errorTexture;
+    gut::Texture            gradientTexture;
 
     // 2 textures for alterating between read and write
     gut::Texture            texture1;
@@ -60,7 +64,8 @@ struct RenderContext {
     RenderContext() :
         targetTexture   (GL_TEXTURE_2D, GL_RGBA32F),
         imprintTexture  (GL_TEXTURE_2D, GL_RGBA32F),
-        errorTexture    (GL_TEXTURE_2D_ARRAY, GL_R32F),
+        errorTexture    (GL_TEXTURE_2D, GL_R32F),
+        gradientTexture (GL_TEXTURE_2D_ARRAY, GL_R32F),
         texture1        (GL_TEXTURE_2D, GL_RGBA32F),
         texture2        (GL_TEXTURE_2D, GL_RGBA32F),
         readTexture     (&texture1),
