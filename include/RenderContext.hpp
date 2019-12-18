@@ -36,6 +36,9 @@ struct RenderContext {
     int                     nLevels;
     float                   error; // error from parallel reduction
     std::array<float, 7>    gradient; // gradient from parallel reduction
+    std::array<float, 7>    fGradient; // momentum filtering
+    float                   fRatio;
+    std::array<float, 7>    gdRateMod; // gradient descent rate modifiers
     float                   pError; // previous error
     int                     nIters;
     double                  imprintRatio; // imprint brush area / canvas area

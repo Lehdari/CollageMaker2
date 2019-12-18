@@ -25,7 +25,7 @@ uniform sampler2D texImprint;
 
 // Epsilons for gradient for different impainting parameters
 const float gEps[7] = {
-    0.5, 0.5, 0.001, 0.001, 0.001, 0.001, 0.001
+    1.0, 1.0, 0.001, 0.001, 0.001, 0.001, 0.001
 };
 
 // Color of imprinted pixel

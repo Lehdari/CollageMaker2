@@ -65,19 +65,26 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintParams[2]*
         renderContext.imprintParams[2]*
         renderContext.imprintRatio;
+    float gdRate = 7.0+0.025/gScale;
     float diff = renderContext.pError - renderContext.error;
 
     // Detect if error difference is small enough
-    double diffLimit = 0.0001*gScale;
+    double diffLimit = 0.00001*gScale;
     if (diff > -1.0e-8 && diff < diffLimit) {
         swap = true;
     } else {
         // Gradient descent
         renderGradient(renderContext);
 
-        float gdRate = 2.0;
-        for (int j=0; j<7; ++j)
-            renderContext.imprintParams[j] -= gdRate*renderContext.gradient[j];
+        for (int j=0; j<7; ++j) {
+            // momentum filtering for the gradient
+            renderContext.fGradient[j] =
+                (1.0f-renderContext.fRatio)*renderContext.gradient[j] +
+                renderContext.fRatio*renderContext.fGradient[j];
+
+            renderContext.imprintParams[j] -=
+                gdRate*renderContext.gdRateMod[j]*renderContext.fGradient[j];
+        }
 
         renderContext.imprintParams[2] = std::clamp(renderContext.imprintParams[2], 0.1f, 1.0f);
         renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
@@ -107,8 +114,8 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Imgui
     {
         ImGui::Begin("Imprint");
-        ImGui::Text("error: %0.10f %0.10f %0.10f %0.10f", renderContext.error, diff,
-            diffLimit, diff/diffLimit);
+        ImGui::Text("error: %0.10f %0.10f %0.10f", renderContext.error,
+            diff/diffLimit, gdRate);
         ImGui::ColorEdit4("Color", &renderContext.imprintParams[4]);
         ImGui::SliderFloat("X", &renderContext.imprintParams[0], 0.0f, 1024.0f, "%.3f");
         ImGui::SliderFloat("Y", &renderContext.imprintParams[1], 0.0f, 1024.0f, "%.3f");
@@ -132,7 +139,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         printf("firstError: %0.5f\n", firstError);
 
         // try different positions, pick the best
-        for (int i=0; i<10; ++i) {
+        for (int i=0; i<100; ++i) {
             randomizeImprintParams(renderContext);
             renderError(renderContext);
             if (renderContext.error < minError) {
@@ -142,6 +149,10 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
             }
         }
         printf("Improvement: %0.5f\n", firstError/minError);
+
+        renderContext.imprintParams = minImprintParams;
+        renderContext.gradient.fill(0.0f);
+        renderContext.fGradient.fill(0.0f);
 
         //renderContext.imprintParams[3] = atan2(512.0-renderContext.imprintParams[1], renderContext.imprintParams[0]-512.0)+0.5*PI;
 
@@ -257,6 +268,11 @@ int main(int argc, char** argv)
     for (int i=renderContext.width; i>0; i = i >> 1, ++renderContext.nLevels);
     renderContext.error = -1.0f;
     renderContext.gradient.fill(0.0f);
+    renderContext.fGradient.fill(0.0f);
+    renderContext.fRatio = 0.8f;
+    renderContext.gdRateMod.fill(1.0f);
+    renderContext.gdRateMod[0] = 1000.0f;
+    renderContext.gdRateMod[1] = 1000.0f;
     renderContext.pError = -1.0f;
     renderContext.nIters = 0;
 
