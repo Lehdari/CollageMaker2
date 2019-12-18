@@ -136,7 +136,6 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderError(renderContext);
         float minError = renderContext.error;
         float firstError = minError;
-        printf("firstError: %0.5f\n", firstError);
 
         // try different positions, pick the best
         for (int i=0; i<100; ++i) {
@@ -145,10 +144,8 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
             if (renderContext.error < minError) {
                 minImprintParams = renderContext.imprintParams;
                 minError = renderContext.error;
-                printf("%d minError: %0.5f\n", i, minError);
             }
         }
-        printf("Improvement: %0.5f\n", firstError/minError);
 
         renderContext.imprintParams = minImprintParams;
         renderContext.gradient.fill(0.0f);
