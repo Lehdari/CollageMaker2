@@ -43,11 +43,12 @@ struct RenderContext {
     // Imprint parameters
     int                     imprintWidth;
     int                     imprintHeight;
-    float                   imprintX;
-    float                   imprintY;
-    float                   imprintScale;
-    float                   imprintAngle;
-    Vec4f                   imprintColor;
+    // 0: x
+    // 1: y
+    // 2: scale
+    // 3: angle
+    // 4-6: color
+    std::array<float, 7>    imprintParams;
 
     // Textures for the imprint process
     gut::Texture            targetTexture;

@@ -61,7 +61,10 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     renderError(renderContext);
-    double gScale = renderContext.imprintScale*renderContext.imprintScale*renderContext.imprintRatio;
+    double gScale =
+        renderContext.imprintParams[2]*
+        renderContext.imprintParams[2]*
+        renderContext.imprintRatio;
     float diff = renderContext.pError - renderContext.error;
 
     // Detect if error difference is small enough
@@ -72,17 +75,14 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         // Gradient descent
         renderGradient(renderContext);
 
-        float gdRate = std::clamp(0.75+0.1/gScale, 0.0, 8.0);
-        renderContext.imprintX -= gdRate*1000.0*renderContext.gradient[0];
-        renderContext.imprintY -= gdRate*1000.0*renderContext.gradient[1];
-        renderContext.imprintScale -= gdRate*renderContext.gradient[2];
-        renderContext.imprintAngle -= gdRate*renderContext.gradient[3];
-        renderContext.imprintColor[0] -= gdRate*renderContext.gradient[4];
-        renderContext.imprintColor[1] -= gdRate*renderContext.gradient[5];
-        renderContext.imprintColor[2] -= gdRate*renderContext.gradient[6];
+        float gdRate = 2.0;
+        for (int j=0; j<7; ++j)
+            renderContext.imprintParams[j] -= gdRate*renderContext.gradient[j];
 
-        renderContext.imprintScale = std::clamp(renderContext.imprintScale, 0.1f, 1.0f);
-        renderContext.imprintColor = renderContext.imprintColor.cwiseMax(0.0).cwiseMin(1.0);
+        renderContext.imprintParams[2] = std::clamp(renderContext.imprintParams[2], 0.1f, 1.0f);
+        renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
+        renderContext.imprintParams[5] = std::clamp(renderContext.imprintParams[5], 0.0f, 1.0f);
+        renderContext.imprintParams[6] = std::clamp(renderContext.imprintParams[6], 0.0f, 1.0f);
     }
 
     // Imprint
@@ -91,23 +91,17 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     renderContext.imprintShader.setUniform("height", renderContext.height);
     renderContext.imprintShader.setUniform("imprintWidth", renderContext.imprintWidth);
     renderContext.imprintShader.setUniform("imprintHeight", renderContext.imprintHeight);
-
-    renderContext.imprintShader.setUniform("imprintX", renderContext.imprintX);
-    renderContext.imprintShader.setUniform("imprintY", renderContext.imprintY);
-    renderContext.imprintShader.setUniform("imprintScale", renderContext.imprintScale);
-    renderContext.imprintShader.setUniform("imprintAngle", renderContext.imprintAngle);
-    renderContext.imprintShader.setUniform("imprintColor", renderContext.imprintColor);
+    renderContext.imprintShader.setUniform("imprintParams", renderContext.imprintParams);
 
     renderContext.readTexture->bind(GL_TEXTURE0);
     renderContext.imprintTexture.bind(GL_TEXTURE1);
-
     renderContext.writeTexture->bindImage(0);
+
     renderContext.imprintShader.dispatch(renderContext.width, renderContext.height, 1);
 
     // Draw
     renderContext.drawShader.use();
     renderContext.writeTexture->bind(GL_TEXTURE0);
-    //renderContext.errorTexture.bind(GL_TEXTURE0);
     renderContext.quad.render(renderContext.drawShader, renderContext.camera);
 
     // Imgui
@@ -115,11 +109,11 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         ImGui::Begin("Imprint");
         ImGui::Text("error: %0.10f %0.10f %0.10f %0.10f", renderContext.error, diff,
             diffLimit, diff/diffLimit);
-        ImGui::ColorEdit4("Color", renderContext.imprintColor.data());
-        ImGui::SliderFloat("X", &renderContext.imprintX, 0.0f, 1024.0f, "%.3f");
-        ImGui::SliderFloat("Y", &renderContext.imprintY, 0.0f, 1024.0f, "%.3f");
-        ImGui::SliderFloat("Scale", &renderContext.imprintScale, 0.0f, 8.0f, "%.3f");
-        ImGui::SliderFloat("Angle", &renderContext.imprintAngle, 0.0f, 6.2831f, "%.3f");
+        ImGui::ColorEdit4("Color", &renderContext.imprintParams[4]);
+        ImGui::SliderFloat("X", &renderContext.imprintParams[0], 0.0f, 1024.0f, "%.3f");
+        ImGui::SliderFloat("Y", &renderContext.imprintParams[1], 0.0f, 1024.0f, "%.3f");
+        ImGui::SliderFloat("Scale", &renderContext.imprintParams[2], 0.0f, 8.0f, "%.3f");
+        ImGui::SliderFloat("Angle", &renderContext.imprintParams[3], 0.0f, 6.2831f, "%.3f");
         if (ImGui::Button("Imprint"))
             swap = true;
         ImGui::End();
@@ -130,11 +124,8 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         std::swap(renderContext.readTexture, renderContext.writeTexture);
 
         // generate new imprint position
-        float minImprintX = renderContext.imprintX = RND*renderContext.width;
-        float minImprintY = renderContext.imprintY = RND*renderContext.height;
-        float minImprintScale = renderContext.imprintScale = 0.1+RND*0.4;
-        float minImprintAngle = renderContext.imprintAngle = PI*2.0*RND;
-        Vec4f minImprintColor = renderContext.imprintColor = Vec4f(RND, RND, RND, 1.0);
+        randomizeImprintParams(renderContext);
+        auto minImprintParams = renderContext.imprintParams;
         renderError(renderContext);
         float minError = renderContext.error;
         float firstError = minError;
@@ -142,26 +133,17 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
 
         // try different positions, pick the best
         for (int i=0; i<10; ++i) {
-            renderContext.imprintX = RND*renderContext.width;
-            renderContext.imprintY = RND*renderContext.height;
-            renderContext.imprintScale = 0.1+RND*0.4;
-            renderContext.imprintAngle = PI*2.0*RND;
-            renderContext.imprintColor = Vec4f(RND, RND, RND, 1.0);
+            randomizeImprintParams(renderContext);
             renderError(renderContext);
             if (renderContext.error < minError) {
-                minImprintX = renderContext.imprintX;
-                minImprintY = renderContext.imprintY;
-                minImprintScale = renderContext.imprintScale;
-                minImprintAngle = renderContext.imprintAngle;
-                minImprintColor = renderContext.imprintColor;
-
+                minImprintParams = renderContext.imprintParams;
                 minError = renderContext.error;
                 printf("%d minError: %0.5f\n", i, minError);
             }
         }
         printf("Improvement: %0.5f\n", firstError/minError);
 
-        //renderContext.imprintAngle = atan2(512.0-renderContext.imprintY, renderContext.imprintX-512.0)+0.5*PI;
+        //renderContext.imprintParams[3] = atan2(512.0-renderContext.imprintParams[1], renderContext.imprintParams[0]-512.0)+0.5*PI;
 
         renderContext.error = -1.0;
         renderContext.pError = -1.0;
@@ -224,11 +206,7 @@ int main(int argc, char** argv)
     renderContext.imprintShader.addUniform("height");
     renderContext.imprintShader.addUniform("imprintWidth");
     renderContext.imprintShader.addUniform("imprintHeight");
-    renderContext.imprintShader.addUniform("imprintX");
-    renderContext.imprintShader.addUniform("imprintY");
-    renderContext.imprintShader.addUniform("imprintScale");
-    renderContext.imprintShader.addUniform("imprintAngle");
-    renderContext.imprintShader.addUniform("imprintColor");
+    renderContext.imprintShader.addUniform("imprintParams");
     renderContext.imprintShader.addUniform("texCurrent");
     renderContext.imprintShader.setUniform("texCurrent", 0);
     renderContext.imprintShader.addUniform("texImprint");
@@ -237,11 +215,7 @@ int main(int argc, char** argv)
     renderContext.errorShader.use();
     renderContext.errorShader.addUniform("imprintWidth");
     renderContext.errorShader.addUniform("imprintHeight");
-    renderContext.errorShader.addUniform("imprintX");
-    renderContext.errorShader.addUniform("imprintY");
-    renderContext.errorShader.addUniform("imprintScale");
-    renderContext.errorShader.addUniform("imprintAngle");
-    renderContext.errorShader.addUniform("imprintColor");
+    renderContext.errorShader.addUniform("imprintParams");
     renderContext.errorShader.addUniform("texCurrent");
     renderContext.errorShader.setUniform("texCurrent", 0);
     renderContext.errorShader.addUniform("texTarget");
@@ -252,11 +226,7 @@ int main(int argc, char** argv)
     renderContext.gradientShader.use();
     renderContext.gradientShader.addUniform("imprintWidth");
     renderContext.gradientShader.addUniform("imprintHeight");
-    renderContext.gradientShader.addUniform("imprintX");
-    renderContext.gradientShader.addUniform("imprintY");
-    renderContext.gradientShader.addUniform("imprintScale");
-    renderContext.gradientShader.addUniform("imprintAngle");
-    renderContext.gradientShader.addUniform("imprintColor");
+    renderContext.gradientShader.addUniform("imprintParams");
     renderContext.gradientShader.addUniform("texCurrent");
     renderContext.gradientShader.setUniform("texCurrent", 0);
     renderContext.gradientShader.addUniform("texTarget");
@@ -300,11 +270,7 @@ int main(int argc, char** argv)
         (double)(renderContext.imprintWidth*renderContext.imprintHeight)/
         (double)(renderContext.width*renderContext.height);
 
-    renderContext.imprintX = RND*renderContext.width;
-    renderContext.imprintY = RND*renderContext.height;
-    renderContext.imprintScale = 0.1 + RND*0.4;
-    renderContext.imprintAngle = PI*2.0*RND;
-    renderContext.imprintColor << RND, RND, RND, 1.0;
+    randomizeImprintParams(renderContext);
 
     renderContext.errorTexture.create(renderContext.width, renderContext.height);
     renderContext.errorTexture.setFiltering(GL_NEAREST, GL_NEAREST);

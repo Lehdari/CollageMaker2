@@ -20,11 +20,7 @@ uniform int height;
 // Imprint parameters
 uniform int   imprintWidth;
 uniform int   imprintHeight;
-uniform float imprintX;
-uniform float imprintY;
-uniform float imprintScale;
-uniform float imprintAngle;
-uniform vec4  imprintColor;
+uniform float imprintParams[7];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -45,19 +41,20 @@ void main() {
     itt[2][1] = -0.5;
 
     mat3 itr = mat3(1.0);
-    itr[0][0] = cos(imprintAngle);
-    itr[1][0] = sin(imprintAngle);
-    itr[0][1] = -sin(imprintAngle);
-    itr[1][1] = cos(imprintAngle);
+    itr[0][0] = cos(imprintParams[3]);
+    itr[1][0] = sin(imprintParams[3]);
+    itr[0][1] = -sin(imprintParams[3]);
+    itr[1][1] = cos(imprintParams[3]);
 
     mat3 it = mat3(1.0);
-    it[0][0] = imprintScale;
-    it[1][1] = imprintScale;
-    it[2][0] = imprintX/imprintWidth;
-    it[2][1] = imprintY/imprintHeight;
+    it[0][0] = imprintParams[2];
+    it[1][1] = imprintParams[2];
+    it[2][0] = imprintParams[0]/imprintWidth;
+    it[2][1] = imprintParams[1]/imprintHeight;
 
     vec3 iuv = vec3(cp.xy/vec2(imprintWidth, imprintHeight), 1.0);
-    vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)*imprintColor;
+    vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)*
+        vec4(imprintParams[4], imprintParams[5], imprintParams[6], 1.0);
 
     vec4 pixel = vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 

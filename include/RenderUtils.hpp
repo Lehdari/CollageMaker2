@@ -21,5 +21,8 @@ void renderError(RenderContext& renderContext);
 // Calculate rendering gradient
 void renderGradient(RenderContext& renderContext);
 
+// Generate new imprint parameter vector
+void randomizeImprintParams(RenderContext& renderContext);
+
 
 #endif //COLLAGEMAKER2_RENDERUTILS_HPP

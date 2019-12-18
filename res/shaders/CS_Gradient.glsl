@@ -16,11 +16,7 @@ layout(r32f, binding = 0) uniform image2DArray img_output;
 // Imprint parameters
 uniform int   imprintWidth;
 uniform int   imprintHeight;
-uniform float imprintX;
-uniform float imprintY;
-uniform float imprintScale;
-uniform float imprintAngle;
-uniform vec4  imprintColor;
+uniform float imprintParams[7];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -54,7 +50,7 @@ vec4 imprint(vec2 cp, vec4 cPixel, float params[7])
 
     vec3 iuv = vec3(cp.xy/vec2(imprintWidth, imprintHeight), 1.0);
     vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)
-        *vec4(params[4], params[5], params[6], imprintColor.a);
+        *vec4(params[4], params[5], params[6], 1.0);
 
     return vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 }
@@ -66,16 +62,14 @@ void main() {
     vec4 tPixel = texelFetch(texTarget, p, 0); // target pixel
 
     // gradient
-    float iParams[7] = { imprintX, imprintY, imprintScale, imprintAngle,
-    imprintColor[0], imprintColor[1], imprintColor[2] };
-    float gParams[7] = iParams;
+    float gParams[7] = imprintParams;
     for (int i=0; i<7; ++i) {
         // evaluate gradient by using trapezoid rule
-        gParams[i] = iParams[i]-gEps[i];
+        gParams[i] = imprintParams[i]-gEps[i];
         vec4 gDiff1 = imprint(cp, cPixel, gParams) - tPixel;
         float ge1 = dot(gDiff1, gDiff1);
 
-        gParams[i] = iParams[i]+gEps[i];
+        gParams[i] = imprintParams[i]+gEps[i];
         vec4 gDiff2 = imprint(cp, cPixel, gParams) - tPixel;
         float ge2 = dot(gDiff2, gDiff2);
 

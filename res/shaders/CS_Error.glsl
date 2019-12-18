@@ -16,11 +16,7 @@ layout(r32f, binding = 0) uniform image2D img_output;
 // Imprint parameters
 uniform int   imprintWidth;
 uniform int   imprintHeight;
-uniform float imprintX;
-uniform float imprintY;
-uniform float imprintScale;
-uniform float imprintAngle;
-uniform vec4  imprintColor;
+uniform float imprintParams[7];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -54,7 +50,7 @@ vec4 imprint(vec2 cp, vec4 cPixel, float params[7])
 
     vec3 iuv = vec3(cp.xy/vec2(imprintWidth, imprintHeight), 1.0);
     vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)
-        *vec4(params[4], params[5], params[6], imprintColor.a);
+        *vec4(params[4], params[5], params[6], 1.0);
 
     return vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 }
@@ -65,9 +61,7 @@ void main() {
     vec4 cPixel = texelFetch(texCurrent, p, 0); // current pixel
     vec4 tPixel = texelFetch(texTarget, p, 0); // target pixel
 
-    float iParams[7] = { imprintX, imprintY, imprintScale, imprintAngle,
-        imprintColor[0], imprintColor[1], imprintColor[2] };
-    vec4 nPixel = imprint(cp, cPixel, iParams); // imprinted pixel
+    vec4 nPixel = imprint(cp, cPixel, imprintParams); // imprinted pixel
 
     // error
     vec4 diff = nPixel - tPixel;

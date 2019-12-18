@@ -9,6 +9,7 @@
 //
 
 #include "RenderUtils.hpp"
+#include "Utils/MathUtils.hpp"
 
 
 void renderError(RenderContext& renderContext)
@@ -17,11 +18,7 @@ void renderError(RenderContext& renderContext)
     renderContext.errorShader.use();
     renderContext.errorShader.setUniform("imprintWidth", renderContext.imprintWidth);
     renderContext.errorShader.setUniform("imprintHeight", renderContext.imprintHeight);
-    renderContext.errorShader.setUniform("imprintX", renderContext.imprintX);
-    renderContext.errorShader.setUniform("imprintY", renderContext.imprintY);
-    renderContext.errorShader.setUniform("imprintScale", renderContext.imprintScale);
-    renderContext.errorShader.setUniform("imprintAngle", renderContext.imprintAngle);
-    renderContext.errorShader.setUniform("imprintColor", renderContext.imprintColor);
+    renderContext.errorShader.setUniform("imprintParams", renderContext.imprintParams);
     renderContext.readTexture->bind(GL_TEXTURE0);
     renderContext.targetTexture.bind(GL_TEXTURE1);
     renderContext.imprintTexture.bind(GL_TEXTURE2);
@@ -49,11 +46,7 @@ void renderGradient(RenderContext& renderContext)
     renderContext.gradientShader.use();
     renderContext.gradientShader.setUniform("imprintWidth", renderContext.imprintWidth);
     renderContext.gradientShader.setUniform("imprintHeight", renderContext.imprintHeight);
-    renderContext.gradientShader.setUniform("imprintX", renderContext.imprintX);
-    renderContext.gradientShader.setUniform("imprintY", renderContext.imprintY);
-    renderContext.gradientShader.setUniform("imprintScale", renderContext.imprintScale);
-    renderContext.gradientShader.setUniform("imprintAngle", renderContext.imprintAngle);
-    renderContext.gradientShader.setUniform("imprintColor", renderContext.imprintColor);
+    renderContext.errorShader.setUniform("imprintParams", renderContext.imprintParams);
     renderContext.readTexture->bind(GL_TEXTURE0);
     renderContext.targetTexture.bind(GL_TEXTURE1);
     renderContext.imprintTexture.bind(GL_TEXTURE2);
@@ -72,4 +65,15 @@ void renderGradient(RenderContext& renderContext)
 
     // Fetch gradient
     glGetTexImage(GL_TEXTURE_2D_ARRAY, renderContext.nLevels-1, GL_RED, GL_FLOAT, renderContext.gradient.data());
+}
+
+void randomizeImprintParams(RenderContext& renderContext)
+{
+    renderContext.imprintParams[0] = rnd()*renderContext.width;
+    renderContext.imprintParams[1] = rnd()*renderContext.height;
+    renderContext.imprintParams[2] = 0.1+rnd()*0.4;
+    renderContext.imprintParams[3] = PI*2.0*rnd();
+    renderContext.imprintParams[4] = rnd();
+    renderContext.imprintParams[5] = rnd();
+    renderContext.imprintParams[6] = rnd();
 }
