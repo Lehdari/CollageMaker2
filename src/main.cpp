@@ -73,23 +73,25 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     if (diff > -1.0e-8 && diff < diffLimit) {
         swap = true;
     } else {
-        // Gradient descent
-        renderGradient(renderContext);
+        for (int i=0; i<10; ++i) {
+            // Gradient descent
+            renderGradient(renderContext);
 
-        for (int j=0; j<7; ++j) {
-            // momentum filtering for the gradient
-            renderContext.fGradient[j] =
-                (1.0f-renderContext.fRatio)*renderContext.gradient[j] +
-                renderContext.fRatio*renderContext.fGradient[j];
+            for (int j = 0; j < 7; ++j) {
+                // momentum filtering for the gradient
+                renderContext.fGradient[j] =
+                    (1.0f-renderContext.fRatio)*renderContext.gradient[j]+
+                    renderContext.fRatio*renderContext.fGradient[j];
 
-            renderContext.imprintParams[j] -=
-                gdRate*renderContext.gdRateMod[j]*renderContext.fGradient[j];
+                renderContext.imprintParams[j] -=
+                    gdRate*renderContext.gdRateMod[j]*renderContext.fGradient[j];
+            }
+
+            renderContext.imprintParams[2] = std::clamp(renderContext.imprintParams[2], 0.1f, 1.0f);
+            renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
+            renderContext.imprintParams[5] = std::clamp(renderContext.imprintParams[5], 0.0f, 1.0f);
+            renderContext.imprintParams[6] = std::clamp(renderContext.imprintParams[6], 0.0f, 1.0f);
         }
-
-        renderContext.imprintParams[2] = std::clamp(renderContext.imprintParams[2], 0.1f, 1.0f);
-        renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
-        renderContext.imprintParams[5] = std::clamp(renderContext.imprintParams[5], 0.0f, 1.0f);
-        renderContext.imprintParams[6] = std::clamp(renderContext.imprintParams[6], 0.0f, 1.0f);
     }
 
     // Imprint
