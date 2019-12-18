@@ -125,16 +125,43 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         ImGui::End();
     }
 
-    // swap texture read/write
     if (swap) {
+        // swap texture read/write
         std::swap(renderContext.readTexture, renderContext.writeTexture);
 
-        renderContext.imprintX = RND*renderContext.width;
-        renderContext.imprintY = RND*renderContext.height;
-        renderContext.imprintScale = 0.1 + RND*0.4;
-        //renderContext.imprintAngle = PI*2.0*RND;
-        renderContext.imprintAngle = atan2(512.0-renderContext.imprintY, renderContext.imprintX-512.0)+0.5*PI;
-        renderContext.imprintColor << RND, RND, RND, 1.0;
+        // generate new imprint position
+        float minImprintX = renderContext.imprintX = RND*renderContext.width;
+        float minImprintY = renderContext.imprintY = RND*renderContext.height;
+        float minImprintScale = renderContext.imprintScale = 0.1+RND*0.4;
+        float minImprintAngle = renderContext.imprintAngle = PI*2.0*RND;
+        Vec4f minImprintColor = renderContext.imprintColor = Vec4f(RND, RND, RND, 1.0);
+        renderError(renderContext);
+        float minError = renderContext.error;
+        float firstError = minError;
+        printf("firstError: %0.5f\n", firstError);
+
+        // try different positions, pick the best
+        for (int i=0; i<10; ++i) {
+            renderContext.imprintX = RND*renderContext.width;
+            renderContext.imprintY = RND*renderContext.height;
+            renderContext.imprintScale = 0.1+RND*0.4;
+            renderContext.imprintAngle = PI*2.0*RND;
+            renderContext.imprintColor = Vec4f(RND, RND, RND, 1.0);
+            renderError(renderContext);
+            if (renderContext.error < minError) {
+                minImprintX = renderContext.imprintX;
+                minImprintY = renderContext.imprintY;
+                minImprintScale = renderContext.imprintScale;
+                minImprintAngle = renderContext.imprintAngle;
+                minImprintColor = renderContext.imprintColor;
+
+                minError = renderContext.error;
+                printf("%d minError: %0.5f\n", i, minError);
+            }
+        }
+        printf("Improvement: %0.5f\n", firstError/minError);
+
+        //renderContext.imprintAngle = atan2(512.0-renderContext.imprintY, renderContext.imprintX-512.0)+0.5*PI;
 
         renderContext.error = -1.0;
         renderContext.pError = -1.0;
