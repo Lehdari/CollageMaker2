@@ -20,7 +20,7 @@ uniform int height;
 // Imprint parameters
 uniform int   imprintWidth;
 uniform int   imprintHeight;
-uniform float imprintParams[7];
+uniform float imprintParams[8];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -54,7 +54,7 @@ void main() {
 
     vec3 ip = inverse(it*itr*itt)*vec3(cp.xy, 1.0);
     vec4 iPixel = texture(texImprint, vec2(ip.x/imprintWidth, ip.y/imprintHeight))*
-        vec4(imprintParams[4], imprintParams[5], imprintParams[6], 1.0);
+        vec4(imprintParams[4], imprintParams[5], imprintParams[6], imprintParams[7]);
 
     vec4 pixel = vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 

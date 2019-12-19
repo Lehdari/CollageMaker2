@@ -65,19 +65,19 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintParams[2]*
         renderContext.imprintParams[2]*
         renderContext.imprintRatio;
-    float gdRate = 7.0+0.025/gScale;
+    float gdRate = 4.0+0.02/gScale;
     float diff = renderContext.pError - renderContext.error;
+    double diffLimit = 0.00001*gScale;
 
     // Detect if error difference is small enough
-    double diffLimit = 0.00001*gScale;
-    if (diff > -1.0e-8 && diff < diffLimit) {
+    if (diff > -1.0e-12 && diff < diffLimit) {
         swap = true;
     } else {
         for (int i=0; i<10; ++i) {
             // Gradient descent
             renderGradient(renderContext);
 
-            for (int j = 0; j < 7; ++j) {
+            for (int j = 0; j < 8; ++j) {
                 // momentum filtering for the gradient
                 renderContext.fGradient[j] =
                     (1.0f-renderContext.fRatio)*renderContext.gradient[j]+
@@ -91,6 +91,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
             renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
             renderContext.imprintParams[5] = std::clamp(renderContext.imprintParams[5], 0.0f, 1.0f);
             renderContext.imprintParams[6] = std::clamp(renderContext.imprintParams[6], 0.0f, 1.0f);
+            renderContext.imprintParams[7] = std::clamp(renderContext.imprintParams[7], 0.75f, 1.0f);
         }
     }
 
@@ -268,7 +269,7 @@ int main(int argc, char** argv)
     renderContext.error = -1.0f;
     renderContext.gradient.fill(0.0f);
     renderContext.fGradient.fill(0.0f);
-    renderContext.fRatio = 0.8f;
+    renderContext.fRatio = 0.85f;
     renderContext.gdRateMod.fill(1.0f);
     renderContext.gdRateMod[0] = 1000.0f;
     renderContext.gdRateMod[1] = 1000.0f;
@@ -289,7 +290,7 @@ int main(int argc, char** argv)
 
     renderContext.errorTexture.create(renderContext.width, renderContext.height);
     renderContext.errorTexture.setFiltering(GL_NEAREST, GL_NEAREST);
-    renderContext.gradientTexture.create(renderContext.width, renderContext.height, 7);
+    renderContext.gradientTexture.create(renderContext.width, renderContext.height, 8);
     renderContext.gradientTexture.setFiltering(GL_NEAREST, GL_NEAREST);
 
     renderContext.texture1.create(renderContext.width, renderContext.height);

@@ -21,7 +21,7 @@ uniform sampler2DArray texGradient;
 void main() {
     ivec2 p2 = ivec2(gl_GlobalInvocationID.xy)*2;
 
-    for (int i=0; i<7; ++i) {
+    for (int i=0; i<8; ++i) {
         vec4 gp;
         gp[0] = texelFetch(texGradient, ivec3(p2, i), level).r;
         gp[1] = texelFetch(texGradient, ivec3(p2+ivec2(1, 0), i), level).r;

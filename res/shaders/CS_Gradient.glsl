@@ -16,7 +16,7 @@ layout(r32f, binding = 0) uniform image2DArray img_output;
 // Imprint parameters
 uniform int   imprintWidth;
 uniform int   imprintHeight;
-uniform float imprintParams[7];
+uniform float imprintParams[8];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -24,12 +24,12 @@ uniform sampler2D texTarget;
 uniform sampler2D texImprint;
 
 // Epsilons for gradient for different impainting parameters
-const float gEps[7] = {
-    1.0, 1.0, 0.001, 0.001, 0.001, 0.001, 0.001
+const float gEps[8] = {
+    1.0, 1.0, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001
 };
 
 // Color of imprinted pixel
-vec4 imprint(vec2 cp, vec4 cPixel, float params[7])
+vec4 imprint(vec2 cp, vec4 cPixel, float params[8])
 {
     // Sample imprint texture
     mat3 itt = mat3(1.0);
@@ -50,7 +50,7 @@ vec4 imprint(vec2 cp, vec4 cPixel, float params[7])
 
     vec3 ip = inverse(it*itr*itt)*vec3(cp.xy, 1.0);
     vec4 iPixel = texture(texImprint, vec2(ip.x/imprintWidth, ip.y/imprintHeight))
-        *vec4(params[4], params[5], params[6], 1.0);
+    *vec4(params[4], params[5], params[6], params[7]);
 
     return vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 }
@@ -62,8 +62,8 @@ void main() {
     vec4 tPixel = texelFetch(texTarget, p, 0); // target pixel
 
     // gradient
-    float gParams[7] = imprintParams;
-    for (int i=0; i<7; ++i) {
+    float gParams[8] = imprintParams;
+    for (int i=0; i<8; ++i) {
         // evaluate gradient by using trapezoid rule
         gParams[i] = imprintParams[i]-gEps[i];
         vec4 gDiff1 = imprint(cp, cPixel, gParams) - tPixel;

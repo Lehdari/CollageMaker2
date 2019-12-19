@@ -35,10 +35,10 @@ struct RenderContext {
 
     int                     nLevels;
     float                   error; // error from parallel reduction
-    std::array<float, 7>    gradient; // gradient from parallel reduction
-    std::array<float, 7>    fGradient; // momentum filtering
+    std::array<float, 8>    gradient; // gradient from parallel reduction
+    std::array<float, 8>    fGradient; // momentum filtering
     float                   fRatio;
-    std::array<float, 7>    gdRateMod; // gradient descent rate modifiers
+    std::array<float, 8>    gdRateMod; // gradient descent rate modifiers
     float                   pError; // previous error
     int                     nIters;
     double                  imprintRatio; // imprint brush area / canvas area
@@ -51,7 +51,7 @@ struct RenderContext {
     // 2: scale
     // 3: angle
     // 4-6: color
-    std::array<float, 7>    imprintParams;
+    std::array<float, 8>    imprintParams;
 
     // Textures for the imprint process
     gut::Texture            targetTexture;

@@ -76,4 +76,5 @@ void randomizeImprintParams(RenderContext& renderContext)
     renderContext.imprintParams[4] = rnd();
     renderContext.imprintParams[5] = rnd();
     renderContext.imprintParams[6] = rnd();
+    renderContext.imprintParams[7] = 0.9;
 }
