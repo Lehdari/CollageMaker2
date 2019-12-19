@@ -37,8 +37,8 @@ void main() {
 
     // Sample imprint texture
     mat3 itt = mat3(1.0);
-    itt[2][0] = -0.5;
-    itt[2][1] = -0.5;
+    itt[2][0] = -0.5*imprintWidth;
+    itt[2][1] = -0.5*imprintHeight;
 
     mat3 itr = mat3(1.0);
     itr[0][0] = cos(imprintParams[3]);
@@ -49,11 +49,11 @@ void main() {
     mat3 it = mat3(1.0);
     it[0][0] = imprintParams[2];
     it[1][1] = imprintParams[2];
-    it[2][0] = imprintParams[0]/imprintWidth;
-    it[2][1] = imprintParams[1]/imprintHeight;
+    it[2][0] = imprintParams[0];
+    it[2][1] = imprintParams[1];
 
-    vec3 iuv = vec3(cp.xy/vec2(imprintWidth, imprintHeight), 1.0);
-    vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)*
+    vec3 ip = inverse(it*itr*itt)*vec3(cp.xy, 1.0);
+    vec4 iPixel = texture(texImprint, vec2(ip.x/imprintWidth, ip.y/imprintHeight))*
         vec4(imprintParams[4], imprintParams[5], imprintParams[6], 1.0);
 
     vec4 pixel = vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);

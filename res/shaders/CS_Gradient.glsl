@@ -33,8 +33,8 @@ vec4 imprint(vec2 cp, vec4 cPixel, float params[7])
 {
     // Sample imprint texture
     mat3 itt = mat3(1.0);
-    itt[2][0] = -0.5;
-    itt[2][1] = -0.5;
+    itt[2][0] = -0.5*imprintWidth;
+    itt[2][1] = -0.5*imprintHeight;
 
     mat3 itr = mat3(1.0);
     itr[0][0] = cos(params[3]);
@@ -45,11 +45,11 @@ vec4 imprint(vec2 cp, vec4 cPixel, float params[7])
     mat3 it = mat3(1.0);
     it[0][0] = params[2];
     it[1][1] = params[2];
-    it[2][0] = params[0]/imprintWidth;
-    it[2][1] = params[1]/imprintHeight;
+    it[2][0] = params[0];
+    it[2][1] = params[1];
 
-    vec3 iuv = vec3(cp.xy/vec2(imprintWidth, imprintHeight), 1.0);
-    vec4 iPixel = texture(texImprint, (inverse(it*itr*itt)*iuv).xy)
+    vec3 ip = inverse(it*itr*itt)*vec3(cp.xy, 1.0);
+    vec4 iPixel = texture(texImprint, vec2(ip.x/imprintWidth, ip.y/imprintHeight))
         *vec4(params[4], params[5], params[6], 1.0);
 
     return vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
