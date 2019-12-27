@@ -69,6 +69,11 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     float diff = renderContext.pError - renderContext.error;
     double diffLimit = 0.00001*gScale;
 
+    // Logging
+    static double tCum = renderContext.clock();
+    tCum += renderContext.clock();
+    renderContext.log.addRow(tCum, renderContext.error);
+
     // Detect if error difference is small enough
     if (diff > -1.0e-12 && diff < diffLimit) {
         swap = true;

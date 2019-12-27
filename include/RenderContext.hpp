@@ -12,6 +12,9 @@
 #define COLLAGEMAKER2_RENDERCONTEXT_HPP
 
 
+#include "CsvLog.hpp"
+#include "Clock.hpp"
+
 #include <array>
 #include <OpenGLUtils/Mesh.hpp>
 #include <OpenGLUtils/Shader.hpp>
@@ -65,6 +68,10 @@ struct RenderContext {
     gut::Texture*           readTexture;
     gut::Texture*           writeTexture;
 
+    // Log
+    CsvLog                  log;
+    Clock                   clock;
+
     RenderContext() :
         targetTexture   (GL_TEXTURE_2D, GL_RGBA32F),
         imprintTexture  (GL_TEXTURE_2D, GL_RGBA32F),
@@ -73,7 +80,8 @@ struct RenderContext {
         texture1        (GL_TEXTURE_2D, GL_RGBA32F),
         texture2        (GL_TEXTURE_2D, GL_RGBA32F),
         readTexture     (&texture1),
-        writeTexture    (&texture2)
+        writeTexture    (&texture2),
+        log             ("log.csv", ';', 2)
     {}
 };
 
