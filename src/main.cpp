@@ -65,8 +65,10 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintParams[2]*
         renderContext.imprintParams[2]*
         renderContext.imprintRatio;
-    float gdRate = 4.0+0.02/gScale;
-    float diff = renderContext.pError - renderContext.error;
+    float gdRate = 3.0+0.015/gScale;
+    static float pcError = renderContext.pError; // previous cycle error
+    float diff = pcError - renderContext.error;
+    pcError = renderContext.pError;
     double diffLimit = 0.00001*gScale;
 
     // Logging
@@ -78,25 +80,50 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     if (diff > -1.0e-12 && diff < diffLimit) {
         swap = true;
     } else {
-        for (int i=0; i<10; ++i) {
+        for (int i=0; i<1; ++i) {
             // Gradient descent
             renderGradient(renderContext);
 
             for (int j = 0; j < 8; ++j) {
                 // momentum filtering for the gradient
                 renderContext.fGradient[j] =
-                    (1.0f-renderContext.fRatio)*renderContext.gradient[j]+
-                    renderContext.fRatio*renderContext.fGradient[j];
-
-                renderContext.imprintParams[j] -=
-                    gdRate*renderContext.gdRateMod[j]*renderContext.fGradient[j];
+                    (1.0f - renderContext.fRatio) * renderContext.gradient[j] +
+                    renderContext.fRatio * renderContext.fGradient[j];
             }
 
-            renderContext.imprintParams[2] = std::clamp(renderContext.imprintParams[2], 0.1f, 1.0f);
-            renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
-            renderContext.imprintParams[5] = std::clamp(renderContext.imprintParams[5], 0.0f, 1.0f);
-            renderContext.imprintParams[6] = std::clamp(renderContext.imprintParams[6], 0.0f, 1.0f);
-            renderContext.imprintParams[7] = std::clamp(renderContext.imprintParams[7], 0.75f, 1.0f);
+            // line search parameters
+            double lineSearch = 1.0;
+            constexpr double lineSearchRatio = 1.1;
+
+            auto prevImprintParams = renderContext.imprintParams;
+            do {
+                prevImprintParams = renderContext.imprintParams;
+
+                // update imprint parameters
+                for (int j = 0; j < 8; ++j) {
+                    renderContext.imprintParams[j] -=
+                        gdRate * lineSearch * renderContext.gdRateMod[j] *
+                        renderContext.fGradient[j];
+                }
+
+                renderContext.imprintParams[2] = std::clamp(renderContext.imprintParams[2], 0.1f, 1.0f);
+                renderContext.imprintParams[4] = std::clamp(renderContext.imprintParams[4], 0.0f, 1.0f);
+                renderContext.imprintParams[5] = std::clamp(renderContext.imprintParams[5], 0.0f, 1.0f);
+                renderContext.imprintParams[6] = std::clamp(renderContext.imprintParams[6], 0.0f, 1.0f);
+                renderContext.imprintParams[7] = std::clamp(renderContext.imprintParams[7], 0.75f, 1.0f);
+
+                // find error for the update
+                renderError(renderContext);
+
+                // advance exponentially in line search
+                lineSearch *= lineSearchRatio;
+            } while (renderContext.pError > renderContext.error);
+
+            // use previous params (last step increased the error)
+            // but in case the first step increased the error, the algorithm will
+            // get stuck, therefore at least one step is to be performed
+            if (lineSearch > lineSearchRatio*1.000001)
+                renderContext.imprintParams = prevImprintParams;
         }
     }
 
