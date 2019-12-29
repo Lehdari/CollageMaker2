@@ -47,8 +47,8 @@ struct RenderContext {
     double                  imprintRatio; // imprint brush area / canvas area
 
     // Imprint parameters
-    int                     imprintWidth;
-    int                     imprintHeight;
+    int                     imprintTextureWidth;
+    int                     imprintTextureHeight;
     // 0: x
     // 1: y
     // 2: scale

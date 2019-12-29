@@ -131,8 +131,8 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     renderContext.imprintShader.use();
     renderContext.imprintShader.setUniform("width", renderContext.width);
     renderContext.imprintShader.setUniform("height", renderContext.height);
-    renderContext.imprintShader.setUniform("imprintWidth", renderContext.imprintWidth);
-    renderContext.imprintShader.setUniform("imprintHeight", renderContext.imprintHeight);
+    renderContext.imprintShader.setUniform("imprintTextureWidth", renderContext.imprintTextureWidth);
+    renderContext.imprintShader.setUniform("imprintTextureHeight", renderContext.imprintTextureHeight);
     renderContext.imprintShader.setUniform("imprintParams", renderContext.imprintParams);
 
     renderContext.readTexture->bind(GL_TEXTURE0);
@@ -247,8 +247,8 @@ int main(int argc, char** argv)
     renderContext.imprintShader.use();
     renderContext.imprintShader.addUniform("width");
     renderContext.imprintShader.addUniform("height");
-    renderContext.imprintShader.addUniform("imprintWidth");
-    renderContext.imprintShader.addUniform("imprintHeight");
+    renderContext.imprintShader.addUniform("imprintTextureWidth");
+    renderContext.imprintShader.addUniform("imprintTextureHeight");
     renderContext.imprintShader.addUniform("imprintParams");
     renderContext.imprintShader.addUniform("texCurrent");
     renderContext.imprintShader.setUniform("texCurrent", 0);
@@ -256,8 +256,8 @@ int main(int argc, char** argv)
     renderContext.imprintShader.setUniform("texImprint", 1);
 
     renderContext.errorShader.use();
-    renderContext.errorShader.addUniform("imprintWidth");
-    renderContext.errorShader.addUniform("imprintHeight");
+    renderContext.errorShader.addUniform("imprintTextureWidth");
+    renderContext.errorShader.addUniform("imprintTextureHeight");
     renderContext.errorShader.addUniform("imprintParams");
     renderContext.errorShader.addUniform("texCurrent");
     renderContext.errorShader.setUniform("texCurrent", 0);
@@ -267,8 +267,8 @@ int main(int argc, char** argv)
     renderContext.errorShader.setUniform("texImprint", 2);
 
     renderContext.gradientShader.use();
-    renderContext.gradientShader.addUniform("imprintWidth");
-    renderContext.gradientShader.addUniform("imprintHeight");
+    renderContext.gradientShader.addUniform("imprintTextureWidth");
+    renderContext.gradientShader.addUniform("imprintTextureHeight");
     renderContext.gradientShader.addUniform("imprintParams");
     renderContext.gradientShader.addUniform("texCurrent");
     renderContext.gradientShader.setUniform("texCurrent", 0);
@@ -311,11 +311,11 @@ int main(int argc, char** argv)
     renderContext.imprintTexture.loadFromFile(std::string(RES_DIR)+"textures/brush1.png");
     renderContext.imprintTexture.setFiltering(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
     renderContext.imprintTexture.setWrapping(GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER);
-    renderContext.imprintWidth = renderContext.imprintTexture.width();
-    renderContext.imprintHeight = renderContext.imprintTexture.height();
+    renderContext.imprintTextureWidth = renderContext.imprintTexture.width();
+    renderContext.imprintTextureHeight = renderContext.imprintTexture.height();
 
     renderContext.imprintRatio =
-        (double)(renderContext.imprintWidth*renderContext.imprintHeight)/
+        (double)(renderContext.imprintTextureWidth*renderContext.imprintTextureHeight)/
         (double)(renderContext.width*renderContext.height);
 
     randomizeImprintParams(renderContext);

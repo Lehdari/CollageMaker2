@@ -16,8 +16,8 @@ void renderError(RenderContext& renderContext)
 {
     // Bind uniforms
     renderContext.errorShader.use();
-    renderContext.errorShader.setUniform("imprintWidth", renderContext.imprintWidth);
-    renderContext.errorShader.setUniform("imprintHeight", renderContext.imprintHeight);
+    renderContext.errorShader.setUniform("imprintTextureWidth", renderContext.imprintTextureWidth);
+    renderContext.errorShader.setUniform("imprintTextureHeight", renderContext.imprintTextureHeight);
     renderContext.errorShader.setUniform("imprintParams", renderContext.imprintParams);
     renderContext.readTexture->bind(GL_TEXTURE0);
     renderContext.targetTexture.bind(GL_TEXTURE1);
@@ -44,8 +44,8 @@ void renderGradient(RenderContext& renderContext)
 {
     // Bind uniforms
     renderContext.gradientShader.use();
-    renderContext.gradientShader.setUniform("imprintWidth", renderContext.imprintWidth);
-    renderContext.gradientShader.setUniform("imprintHeight", renderContext.imprintHeight);
+    renderContext.gradientShader.setUniform("imprintTextureWidth", renderContext.imprintTextureWidth);
+    renderContext.gradientShader.setUniform("imprintTextureHeight", renderContext.imprintTextureHeight);
     renderContext.errorShader.setUniform("imprintParams", renderContext.imprintParams);
     renderContext.readTexture->bind(GL_TEXTURE0);
     renderContext.targetTexture.bind(GL_TEXTURE1);
