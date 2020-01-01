@@ -14,9 +14,11 @@ layout(local_size_x = 1, local_size_y = 1) in;
 layout(r32f, binding = 0) uniform image2D img_output;
 
 // Imprint parameters
-uniform int   imprintTextureWidth;
-uniform int   imprintTextureHeight;
-uniform float imprintParams[8];
+uniform int     imprintTextureWidth;
+uniform int     imprintTextureHeight;
+uniform int     imprintXOffset;
+uniform int     imprintYOffset;
+uniform float   imprintParams[8];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -56,7 +58,7 @@ vec4 imprint(vec2 cp, vec4 cPixel, float params[8])
 }
 
 void main() {
-    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy) + ivec2(imprintXOffset, imprintYOffset);
     vec2 cp = p + vec2(0.5, 0.5);
     vec4 cPixel = texelFetch(texCurrent, p, 0); // current pixel
     vec4 tPixel = texelFetch(texTarget, p, 0); // target pixel
@@ -66,5 +68,5 @@ void main() {
     // error
     vec4 diff = nPixel - tPixel;
     float e = dot(diff, diff);
-    imageStore(img_output, ivec2(gl_GlobalInvocationID.xy), vec4(e, 0.0, 0.0, 0.0));
+    imageStore(img_output, p, vec4(e, 0.0, 0.0, 0.0));
 }

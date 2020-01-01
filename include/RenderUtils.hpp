@@ -13,6 +13,7 @@
 
 
 #include "RenderContext.hpp"
+#include "Rectangle.hpp"
 
 
 // Calculate rendering error
@@ -20,6 +21,9 @@ void renderError(RenderContext& renderContext);
 
 // Calculate rendering gradient
 void renderGradient(RenderContext& renderContext);
+
+// Imprint
+void renderImprint(RenderContext& renderContext);
 
 // Generate new imprint parameter vector
 void randomizeImprintParams(RenderContext& renderContext);

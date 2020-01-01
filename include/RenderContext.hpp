@@ -14,6 +14,7 @@
 
 #include "CsvLog.hpp"
 #include "Clock.hpp"
+#include "UpdateArea.hpp"
 
 #include <array>
 #include <OpenGLUtils/Mesh.hpp>
@@ -55,6 +56,7 @@ struct RenderContext {
     // 3: angle
     // 4-6: color
     std::array<float, 8>    imprintParams;
+    UpdateArea              updateArea;
 
     // Textures for the imprint process
     gut::Texture            targetTexture;

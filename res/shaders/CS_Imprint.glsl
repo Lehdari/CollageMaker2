@@ -18,9 +18,11 @@ uniform int width;
 uniform int height;
 
 // Imprint parameters
-uniform int   imprintTextureWidth;
-uniform int   imprintTextureHeight;
-uniform float imprintParams[8];
+uniform int     imprintTextureWidth;
+uniform int     imprintTextureHeight;
+uniform int     imprintXOffset;
+uniform int     imprintYOffset;
+uniform float   imprintParams[8];
 
 // Textures
 uniform sampler2D texCurrent;
@@ -31,7 +33,8 @@ const float PI = 3.14159265359;
 
 void main() {
     // Find current pixel location and value
-    vec3 cp = vec3(gl_GlobalInvocationID.xy+vec2(0.5, 0.5), 1.0);
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy) + ivec2(imprintXOffset, imprintYOffset);
+    vec3 cp = vec3(p+vec2(0.5, 0.5), 1.0);
     vec3 cuv = vec3(cp.xy/vec2(width, height), 1.0);
     vec4 cPixel = texture(texCurrent, cuv.xy);
 
@@ -59,5 +62,5 @@ void main() {
     vec4 pixel = vec4((1.0-iPixel.a)*cPixel.rgb + iPixel.a*iPixel.rgb, 1.0);
 
     // output to a specific pixel in the image
-    imageStore(img_output, ivec2(gl_GlobalInvocationID.xy), pixel);
+    imageStore(img_output, p, pixel);
 }

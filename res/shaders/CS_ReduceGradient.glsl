@@ -14,12 +14,15 @@ layout(local_size_x = 1, local_size_y = 1) in;
 layout(r32f, binding = 0) uniform image2DArray img_output;
 
 uniform int level;
+uniform int xOffset = 0;
+uniform int yOffset = 0;
 
 // Textures
 uniform sampler2DArray texGradient;
 
 void main() {
-    ivec2 p2 = ivec2(gl_GlobalInvocationID.xy)*2;
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy) + ivec2(xOffset, yOffset);
+    ivec2 p2 = p*2;
 
     for (int i=0; i<8; ++i) {
         vec4 gp;
@@ -30,7 +33,7 @@ void main() {
 
         float g = (gp[0] + gp[1] + gp[2] + gp[3])*0.25;
 
-        imageStore(img_output, ivec3(gl_GlobalInvocationID.xy, i), vec4(g, 0.0, 0.0, 0.0));
+        imageStore(img_output, ivec3(p, i), vec4(g, 0.0, 0.0, 0.0));
     }
 
 }

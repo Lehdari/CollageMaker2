@@ -128,18 +128,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     }
 
     // Imprint
-    renderContext.imprintShader.use();
-    renderContext.imprintShader.setUniform("width", renderContext.width);
-    renderContext.imprintShader.setUniform("height", renderContext.height);
-    renderContext.imprintShader.setUniform("imprintTextureWidth", renderContext.imprintTextureWidth);
-    renderContext.imprintShader.setUniform("imprintTextureHeight", renderContext.imprintTextureHeight);
-    renderContext.imprintShader.setUniform("imprintParams", renderContext.imprintParams);
-
-    renderContext.readTexture->bind(GL_TEXTURE0);
-    renderContext.imprintTexture.bind(GL_TEXTURE1);
-    renderContext.writeTexture->bindImage(0);
-
-    renderContext.imprintShader.dispatch(renderContext.width, renderContext.height, 1);
+    renderImprint(renderContext);
 
     // Draw
     renderContext.drawShader.use();
@@ -249,6 +238,8 @@ int main(int argc, char** argv)
     renderContext.imprintShader.addUniform("height");
     renderContext.imprintShader.addUniform("imprintTextureWidth");
     renderContext.imprintShader.addUniform("imprintTextureHeight");
+    renderContext.imprintShader.addUniform("imprintXOffset");
+    renderContext.imprintShader.addUniform("imprintYOffset");
     renderContext.imprintShader.addUniform("imprintParams");
     renderContext.imprintShader.addUniform("texCurrent");
     renderContext.imprintShader.setUniform("texCurrent", 0);
@@ -258,6 +249,8 @@ int main(int argc, char** argv)
     renderContext.errorShader.use();
     renderContext.errorShader.addUniform("imprintTextureWidth");
     renderContext.errorShader.addUniform("imprintTextureHeight");
+    renderContext.errorShader.addUniform("imprintXOffset");
+    renderContext.errorShader.addUniform("imprintYOffset");
     renderContext.errorShader.addUniform("imprintParams");
     renderContext.errorShader.addUniform("texCurrent");
     renderContext.errorShader.setUniform("texCurrent", 0);
@@ -269,6 +262,8 @@ int main(int argc, char** argv)
     renderContext.gradientShader.use();
     renderContext.gradientShader.addUniform("imprintTextureWidth");
     renderContext.gradientShader.addUniform("imprintTextureHeight");
+    renderContext.gradientShader.addUniform("imprintXOffset");
+    renderContext.gradientShader.addUniform("imprintYOffset");
     renderContext.gradientShader.addUniform("imprintParams");
     renderContext.gradientShader.addUniform("texCurrent");
     renderContext.gradientShader.setUniform("texCurrent", 0);
@@ -279,11 +274,15 @@ int main(int argc, char** argv)
 
     renderContext.errorReductionShader.use();
     renderContext.errorReductionShader.addUniform("level");
+    renderContext.errorReductionShader.addUniform("xOffset");
+    renderContext.errorReductionShader.addUniform("yOffset");
     renderContext.errorReductionShader.addUniform("texError");
     renderContext.errorReductionShader.setUniform("texError", 0);
 
     renderContext.gradientReductionShader.use();
     renderContext.gradientReductionShader.addUniform("level");
+    renderContext.gradientReductionShader.addUniform("xOffset");
+    renderContext.gradientReductionShader.addUniform("yOffset");
     renderContext.gradientReductionShader.addUniform("texGradient");
     renderContext.gradientReductionShader.setUniform("texGradient", 0);
 
@@ -301,7 +300,7 @@ int main(int argc, char** argv)
     renderContext.error = -1.0f;
     renderContext.gradient.fill(0.0f);
     renderContext.fGradient.fill(0.0f);
-    renderContext.fRatio = 0.85f;
+    renderContext.fRatio = 0.8f;
     renderContext.gdRateMod.fill(1.0f);
     renderContext.gdRateMod[0] = 1000.0f;
     renderContext.gdRateMod[1] = 1000.0f;
@@ -329,6 +328,8 @@ int main(int argc, char** argv)
     renderContext.texture1.setFiltering(GL_NEAREST, GL_NEAREST);
     renderContext.texture2.create(renderContext.width, renderContext.height);
     renderContext.texture2.setFiltering(GL_NEAREST, GL_NEAREST);
+
+    renderContext.updateArea = UpdateArea(renderContext.width, renderContext.height);
 
     // Enter application loop
     app.loop();
