@@ -65,7 +65,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         renderContext.imprintParams[2]*
         renderContext.imprintParams[2]*
         renderContext.imprintRatio;
-    float gdRate = 3.0+0.015/gScale;
+    float gdRate = 2.0+0.025/gScale;
     static float pcError = renderContext.pError; // previous cycle error
     float diff = pcError - renderContext.error;
     pcError = renderContext.pError;
@@ -149,10 +149,13 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
             swap = true;
         ImGui::End();
     }
+#endif
 
     if (swap) {
         // swap texture read/write
         std::swap(renderContext.readTexture, renderContext.writeTexture);
+
+        float prevError = renderContext.error;
 
         // generate new imprint position
         randomizeImprintParams(renderContext);
@@ -162,13 +165,16 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         float firstError = minError;
 
         // try different positions, pick the best
-        for (int i=0; i<100; ++i) {
+        int i = 0;
+        for (; i<32000; ++i) {
             randomizeImprintParams(renderContext);
             renderError(renderContext);
             if (renderContext.error < minError) {
                 minImprintParams = renderContext.imprintParams;
                 minError = renderContext.error;
             }
+            if (renderContext.error < prevError*0.999f)
+                break;
         }
 
         renderContext.imprintParams = minImprintParams;
@@ -300,10 +306,10 @@ int main(int argc, char** argv)
     renderContext.error = -1.0f;
     renderContext.gradient.fill(0.0f);
     renderContext.fGradient.fill(0.0f);
-    renderContext.fRatio = 0.8f;
+    renderContext.fRatio = 0.85f;
     renderContext.gdRateMod.fill(1.0f);
-    renderContext.gdRateMod[0] = 1000.0f;
-    renderContext.gdRateMod[1] = 1000.0f;
+    renderContext.gdRateMod[0] = 100.0f;
+    renderContext.gdRateMod[1] = 100.0f;
     renderContext.pError = -1.0f;
     renderContext.nIters = 0;
 
