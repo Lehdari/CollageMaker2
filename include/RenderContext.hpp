@@ -44,8 +44,8 @@ struct RenderContext {
     float                   fRatio;
     std::array<float, 8>    gdRateMod; // gradient descent rate modifiers
     float                   pError; // previous error
-    int                     nIters;
     double                  imprintRatio; // imprint brush area / canvas area
+    int                     nImprints; // number of imprints
 
     // Imprint parameters
     int                     imprintTextureWidth;
@@ -83,7 +83,7 @@ struct RenderContext {
         texture2        (GL_TEXTURE_2D, GL_RGBA32F),
         readTexture     (&texture1),
         writeTexture    (&texture2),
-        log             ("log.csv", ';', 2)
+        log             ("log.csv", ';', 3)
     {}
 };
 

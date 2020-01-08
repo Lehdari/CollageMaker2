@@ -74,13 +74,13 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
     // Logging
     static double tCum = renderContext.clock();
     tCum += renderContext.clock();
-    renderContext.log.addRow(tCum, renderContext.error);
+    renderContext.log.addRow(tCum, renderContext.error, renderContext.nImprints);
 
     // Detect if error difference is small enough
     if (diff > -1.0e-12 && diff < diffLimit) {
         swap = true;
     } else {
-        for (int i=0; i<1; ++i) {
+        for (int i=0; i<8; ++i) {
             // Gradient descent
             renderGradient(renderContext);
 
@@ -149,7 +149,6 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
             swap = true;
         ImGui::End();
     }
-#endif
 
     if (swap) {
         // swap texture read/write
@@ -185,7 +184,7 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
 
         renderContext.error = -1.0;
         renderContext.pError = -1.0;
-        renderContext.nIters = 0;
+        ++renderContext.nImprints;
     }
 }
 
@@ -311,7 +310,7 @@ int main(int argc, char** argv)
     renderContext.gdRateMod[0] = 100.0f;
     renderContext.gdRateMod[1] = 100.0f;
     renderContext.pError = -1.0f;
-    renderContext.nIters = 0;
+    renderContext.nImprints = 0;
 
     renderContext.imprintTexture.loadFromFile(std::string(RES_DIR)+"textures/brush1.png");
     renderContext.imprintTexture.setFiltering(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
