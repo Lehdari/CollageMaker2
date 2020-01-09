@@ -150,6 +150,11 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         ImGui::End();
     }
 
+    // Terminate once sufficiently low error has been reached
+    if (renderContext.error < 0.02) {
+        *appContext.quit = true;
+    }
+
     if (swap) {
         // swap texture read/write
         std::swap(renderContext.readTexture, renderContext.writeTexture);
