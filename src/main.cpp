@@ -154,6 +154,9 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         // swap texture read/write
         std::swap(renderContext.readTexture, renderContext.writeTexture);
 
+        // copy the error texture to image to use as a PDF for the position sampling
+        renderContext.errorTexture.copyToImage(renderContext.errorImage, 3);
+
         float prevError = renderContext.error;
 
         // generate new imprint position
@@ -166,7 +169,15 @@ void render(RenderContext& renderContext, A_App::Context& appContext)
         // try different positions, pick the best
         int i = 0;
         for (; i<32000; ++i) {
-            randomizeImprintParams(renderContext);
+            // use rejection sampling with error image as PDF
+            float vrs = 0.0f;
+            do {
+                randomizeImprintParams(renderContext);
+                vrs = *renderContext.errorImage(
+                    (int)(renderContext.imprintParams[0]*0.125f),
+                    (int)(renderContext.imprintParams[1]*0.125f));
+            } while (RND > vrs);
+
             renderError(renderContext);
             if (renderContext.error < minError) {
                 minImprintParams = renderContext.imprintParams;

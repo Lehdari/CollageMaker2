@@ -21,6 +21,7 @@
 #include <OpenGLUtils/Shader.hpp>
 #include <OpenGLUtils/Camera.hpp>
 #include <OpenGLUtils/Texture.hpp>
+#include <OpenGLUtils/Image.hpp>
 
 
 struct RenderContext {
@@ -69,6 +70,9 @@ struct RenderContext {
     gut::Texture            texture2;
     gut::Texture*           readTexture;
     gut::Texture*           writeTexture;
+
+    // Image for error data
+    gut::Image<float>       errorImage;
 
     // Log
     CsvLog                  log;
